@@ -1,4 +1,4 @@
-package com.sagarboyal.aiassessment.module.assesment.model;
+package com.sagarboyal.aiassessment.module.assessment.model;
 
 public enum AssessmentStatus {
     PENDING,
