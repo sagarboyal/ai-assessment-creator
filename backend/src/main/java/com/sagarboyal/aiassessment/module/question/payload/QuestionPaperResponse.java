@@ -22,5 +22,6 @@ public class QuestionPaperResponse {
     private Integer totalMarks;
     private List<Section> sections;
     private List<Question> answerKey;
+    private String generalInstruction;
     private LocalDateTime createdAt;
 }

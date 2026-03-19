@@ -25,7 +25,7 @@ public class QuestionPaper {
     private Integer totalMarks;
     private List<Section> sections;
     private List<Question> answerKey;
-
+    private String generalInstruction;
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }
