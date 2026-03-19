@@ -18,6 +18,7 @@ public class QuestionPaperMapper {
                 .totalMarks(paper.getTotalMarks())
                 .sections(paper.getSections())
                 .answerKey(paper.getAnswerKey())
+                .generalInstruction(paper.getGeneralInstruction())
                 .createdAt(paper.getCreatedAt())
                 .build();
     }
