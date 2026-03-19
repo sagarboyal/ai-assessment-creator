@@ -1,1 +1,15 @@
-server:  port: 8080spring:  application:    name: assessment-service  data:    mongodb:      uri: mongodb://localhost:27017/assesment-dbai:  groq:    api-key: ${KEY}    model: llama-3.3-70b-versatile    url: https://api.groq.com/openai/v1/chat/completions
+server:
+  port: 8080
+
+spring:
+  application:
+    name: assessment-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/assesment-db
+
+ai:
+  groq:
+    api-key: ${KEY}
+    model: llama-3.3-70b-versatile
+    url: https://api.groq.com/openai/v1/chat/completions
