@@ -1,7 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
+@theme {
+  --color-shell-bg: #e6e6e6;
+  --color-panel: #e6e6e6;
+  --color-stroke-soft: #ece6dc;
+  --color-selected: #ece8e2;
+  --color-text-strong: #2d2926;
+  --color-text-soft: #817a72;
+  --color-text-faint: #a9a29a;
+}
+
 @layer base {
-  html {
-    font-family: "Inter", sans-serif;
+  :root {
+    font-family: "Manrope", sans-serif;
+    color: var(--text-strong);
+    background: #e6e6e6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  button {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .assignment-shell {
+    animation: shell-rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .assignment-canvas::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    border: 0;
+    pointer-events: none;
+  }
+
+  .assignment-canvas > .relative {
+    animation: content-fade 0.75s ease-out 0.1s both;
+  }
+}
+
+@keyframes shell-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes content-fade {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
