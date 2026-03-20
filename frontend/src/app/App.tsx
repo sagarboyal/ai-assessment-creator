@@ -1,7 +1,5 @@
-import { useState } from "react";
 import {
   AssignmentListPage,
-  type AssignmentCard,
 } from "../components/assignments/AssignmentListPage";
 import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
 import {
@@ -13,29 +11,26 @@ import {
 } from "../components/icons";
 import { Sidebar } from "../components/layout/Sidebar";
 import { TopBar } from "../components/layout/TopBar";
-
-const assignments: AssignmentCard[] = [
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-];
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { setView } from "../store/slices/assignmentSlice";
 
 export function App() {
-  const [view, setView] = useState<"list" | "create">("list");
+  const dispatch = useAppDispatch();
+  const assignments = useAppSelector((state) => state.assignment.assignments);
+  const view = useAppSelector((state) => state.assignment.view);
 
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5 2xl:px-6 2xl:py-4">
       <div className="assignment-shell relative mx-auto flex h-full max-w-[1720px] overflow-hidden rounded-[18px] bg-[var(--shell-bg)] md:flex-row 2xl:gap-3 2xl:rounded-[26px]">
         <div className="hidden py-2.5 md:flex xl:py-3">
-          <Sidebar onCreateAssignment={() => setView("create")} />
+          <Sidebar onCreateAssignment={() => dispatch(setView("create"))} />
         </div>
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#e6e6e6]">
           <TopBar
-            onBack={view === "create" ? () => setView("list") : undefined}
+            onBack={
+              view === "create" ? () => dispatch(setView("list")) : undefined
+            }
             title={view === "create" ? "Create Assignment" : "Assignments"}
           />
           <div
@@ -46,16 +41,16 @@ export function App() {
             {view === "list" ? (
               <AssignmentListPage
                 assignments={assignments}
-                onCreateAssignment={() => setView("create")}
+                onCreateAssignment={() => dispatch(setView("create"))}
               />
             ) : (
-              <CreateAssignmentPage onBack={() => setView("list")} />
+              <CreateAssignmentPage onBack={() => dispatch(setView("list"))} />
             )}
           </div>
         </section>
 
         <button
-          onClick={() => setView("create")}
+          onClick={() => dispatch(setView("create"))}
           className="absolute bottom-[80px] right-3.5 z-20 grid h-9 w-9 place-items-center rounded-full bg-white text-[#ef8e63] shadow-[0_12px_28px_rgba(0,0,0,0.16)] md:hidden"
         >
           <PlusIcon className="h-4 w-4" />
