@@ -13,3 +13,19 @@ ai:
     api-key: ${KEY}
     model: llama-3.3-70b-versatile
     url: https://api.groq.com/openai/v1/chat/completions
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
