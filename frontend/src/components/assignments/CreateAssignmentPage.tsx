@@ -1,6 +1,12 @@
 import { useState, type ChangeEvent, type FormEvent, type HTMLInputTypeAttribute } from "react";
 import { ChevronDownIcon, PlusIcon } from "../icons";
-import { api } from "../../lib/api";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import {
+  clearAssignmentError,
+  createAssessment,
+  selectAssignmentError,
+  selectCreateStatus,
+} from "../../store/slices/assignmentSlice";
 
 type CreateAssignmentPageProps = {
   onBack?: () => void;
@@ -60,12 +66,13 @@ const createQuestionTypeRow = (id: number): QuestionTypeRow => ({
 });
 
 export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
+  const dispatch = useAppDispatch();
+  const createStatus = useAppSelector(selectCreateStatus);
+  const assignmentError = useAppSelector(selectAssignmentError);
   const [form, setForm] = useState<AssessmentFormState>(initialFormState);
   const [questionTypes, setQuestionTypes] = useState<QuestionTypeRow[]>([
     createQuestionTypeRow(1),
   ]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const totalQuestions = questionTypes.reduce(
@@ -115,17 +122,14 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage(null);
+    dispatch(clearAssignmentError());
     setSuccessMessage(null);
 
     if (questionTypes.length === 0) {
-      setErrorMessage("At least one question type is required.");
       return;
     }
 
     try {
-      setIsSubmitting(true);
-
       const payload = {
         title: form.title.trim(),
         subject: form.subject.trim(),
@@ -142,15 +146,13 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
         uploadedFileUrl: form.uploadedFileUrl.trim() || null,
       };
 
-      await api.post("/assessments", payload);
+      await dispatch(createAssessment(payload)).unwrap();
 
       setSuccessMessage("Assignment created successfully.");
       setForm(initialFormState);
       setQuestionTypes([createQuestionTypeRow(1)]);
-    } catch (error) {
-      setErrorMessage("Failed to create assignment. Check the API endpoint and payload shape.");
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // Error state is handled in Redux and surfaced below.
     }
   };
 
@@ -315,9 +317,9 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </div>
           </div>
 
-          {errorMessage ? (
+          {assignmentError ? (
             <p className="mt-5 rounded-2xl border border-[#e8beb1] bg-[#fff3ef] px-4 py-3 text-[13px] text-[#9a4c39]">
-              {errorMessage}
+              {assignmentError}
             </p>
           ) : null}
 
@@ -338,11 +340,11 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </button>
 
             <button
-              disabled={isSubmitting}
+              disabled={createStatus === "loading"}
               type="submit"
               className="inline-flex h-11 items-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-7 text-[14px] font-medium text-white shadow-[0_12px_30px_rgba(21,22,24,0.18)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {isSubmitting ? "Saving..." : "Create Assignment"}
+              {createStatus === "loading" ? "Saving..." : "Create Assignment"}
               <ForwardArrowIcon />
             </button>
           </div>

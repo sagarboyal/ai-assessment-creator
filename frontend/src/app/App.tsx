@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   AssignmentListPage,
 } from "../components/assignments/AssignmentListPage";
@@ -12,12 +13,26 @@ import {
 import { Sidebar } from "../components/layout/Sidebar";
 import { TopBar } from "../components/layout/TopBar";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { setView } from "../store/slices/assignmentSlice";
+import {
+  deleteAssessment,
+  fetchAssessments,
+  selectAssignmentCards,
+  selectAssignmentError,
+  selectAssignmentView,
+  selectFetchStatus,
+  setView,
+} from "../store/slices/assignmentSlice";
 
 export function App() {
   const dispatch = useAppDispatch();
-  const assignments = useAppSelector((state) => state.assignment.assignments);
-  const view = useAppSelector((state) => state.assignment.view);
+  const assignments = useAppSelector(selectAssignmentCards);
+  const errorMessage = useAppSelector(selectAssignmentError);
+  const fetchStatus = useAppSelector(selectFetchStatus);
+  const view = useAppSelector(selectAssignmentView);
+
+  useEffect(() => {
+    void dispatch(fetchAssessments());
+  }, [dispatch]);
 
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5 2xl:px-6 2xl:py-4">
@@ -41,7 +56,10 @@ export function App() {
             {view === "list" ? (
               <AssignmentListPage
                 assignments={assignments}
+                errorMessage={errorMessage}
+                isLoading={fetchStatus === "loading"}
                 onCreateAssignment={() => dispatch(setView("create"))}
+                onDeleteAssignment={(id) => void dispatch(deleteAssessment(id))}
               />
             ) : (
               <CreateAssignmentPage onBack={() => dispatch(setView("list"))} />

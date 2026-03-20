@@ -3,27 +3,25 @@ import { PlusIcon } from "../icons";
 
 type AssignmentListPageProps = {
   assignments?: AssignmentCard[];
+  errorMessage?: string | null;
+  isLoading?: boolean;
   onCreateAssignment?: () => void;
+  onDeleteAssignment?: (id: string) => void;
 };
 
 export type AssignmentCard = {
   assignedOn: string;
   dueOn: string;
+  id: string;
   title: string;
 };
 
-const sampleAssignments: AssignmentCard[] = [
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
-];
-
 export function AssignmentListPage({
-  assignments = sampleAssignments,
+  assignments = [],
+  errorMessage = null,
+  isLoading = false,
   onCreateAssignment,
+  onDeleteAssignment,
 }: AssignmentListPageProps) {
   const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
   const hasAssignments = assignments.length > 0;
@@ -79,21 +77,42 @@ export function AssignmentListPage({
                 </div>
 
                 <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
-                  <div className="grid gap-3 sm:grid-cols-2 xl:gap-4">
-                    {assignments.map((assignment, index) => (
-                      <AssignmentCardItem
-                        key={`${assignment.title}-${index}`}
-                        assignment={assignment}
-                        isMenuOpen={activeMenuIndex === index}
-                        onCloseMenu={() => setActiveMenuIndex(null)}
-                        onOpenMenu={() =>
-                          setActiveMenuIndex((current) =>
-                            current === index ? null : index,
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
+                  {errorMessage ? (
+                    <p className="mb-4 rounded-2xl border border-[#e8beb1] bg-[#fff3ef] px-4 py-3 text-[13px] text-[#9a4c39]">
+                      {errorMessage}
+                    </p>
+                  ) : null}
+
+                  {isLoading ? (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:gap-4">
+                      {Array.from({ length: 4 }).map((_, index) => (
+                        <div
+                          key={index}
+                          className="h-[118px] animate-pulse rounded-[18px] bg-[#f1efeb]"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:gap-4">
+                      {assignments.map((assignment, index) => (
+                        <AssignmentCardItem
+                          key={assignment.id}
+                          assignment={assignment}
+                          isMenuOpen={activeMenuIndex === index}
+                          onCloseMenu={() => setActiveMenuIndex(null)}
+                          onDelete={() => {
+                            setActiveMenuIndex(null);
+                            onDeleteAssignment?.(assignment.id);
+                          }}
+                          onOpenMenu={() =>
+                            setActiveMenuIndex((current) =>
+                              current === index ? null : index,
+                            )
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 flex justify-center pt-1">
@@ -140,11 +159,13 @@ function AssignmentCardItem({
   assignment,
   isMenuOpen,
   onCloseMenu,
+  onDelete,
   onOpenMenu,
 }: {
   assignment: AssignmentCard;
   isMenuOpen: boolean;
   onCloseMenu: () => void;
+  onDelete: () => void;
   onOpenMenu: () => void;
 }) {
   return (
@@ -180,7 +201,7 @@ function AssignmentCardItem({
                   <ArrowActionIcon />
                 </button>
                 <button
-                  onClick={onCloseMenu}
+                  onClick={onDelete}
                   type="button"
                   className="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[#d15a4e] transition hover:bg-[#fff1ee]"
                 >
