@@ -7,7 +7,7 @@ type SidebarProps = {
 
 export function Sidebar({ onCreateAssignment }: SidebarProps) {
   return (
-    <aside className="hidden w-60 flex-col self-stretch rounded-[20px] bg-white p-4 md:flex">
+    <aside className="hidden w-60 flex-col self-stretch rounded-[20px] bg-white p-4 md:flex xl:w-64 xl:p-5 2xl:w-72 2xl:rounded-[24px] 2xl:p-6">
       <div className="flex items-center gap-3">
         <div className="grid h-8 w-8 place-items-center rounded-[10px] bg-[linear-gradient(135deg,#e4b15d_0%,#8a3b1f_100%)] text-base font-black text-white shadow-[0_8px_16px_rgba(130,54,30,0.2)]">
           V

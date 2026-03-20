@@ -8,22 +8,22 @@ export function EmptyAssignmentsState({
   onCreateAssignment,
 }: EmptyAssignmentsStateProps) {
   return (
-    <div className="assignment-canvas relative flex-1 min-h-0 overflow-hidden bg-[var(--shell-bg)] px-2.5 pb-24 pt-2 sm:px-3 sm:pb-3">
-      <div className="relative flex h-full min-h-0 items-center justify-center overflow-hidden rounded-[20px] bg-[var(--shell-bg)] px-4 py-8 sm:px-6 sm:py-18">
+    <div className="assignment-canvas relative flex-1 min-h-0 overflow-hidden bg-[var(--shell-bg)] px-2.5 pb-24 pt-2 sm:px-3 sm:pb-3 xl:px-5 2xl:px-8 2xl:pb-5">
+      <div className="relative mx-auto flex h-full min-h-0 w-full max-w-[1240px] items-center justify-center overflow-hidden rounded-[20px] bg-[var(--shell-bg)] px-4 py-8 sm:px-6 sm:py-18 2xl:max-w-[1380px] 2xl:rounded-[28px]">
         {/* Scribble — pinned to top-left corner, won't drift inward */}
-        <div className="pointer-events-none absolute left-[10%] top-[18%] h-8 w-8 rotate-[-8deg] text-[#0f1f33] opacity-90">
+        <div className="pointer-events-none absolute left-[clamp(2rem,10%,8rem)] top-[18%] h-8 w-8 rotate-[-8deg] text-[#0f1f33] opacity-90 2xl:h-10 2xl:w-10">
           <ScribbleIcon />
         </div>
 
         {/* Sparkle — pinned to left side below midpoint */}
-        <div className="pointer-events-none absolute left-[12%] top-[62%] h-4.5 w-4.5 text-[#5a7eaa] opacity-85">
+        <div className="pointer-events-none absolute left-[clamp(2.75rem,12%,9rem)] top-[62%] h-4.5 w-4.5 text-[#5a7eaa] opacity-85 2xl:h-5 2xl:w-5">
           <SparkleOutlineIcon />
         </div>
 
         {/* Dot — pinned to right side */}
-        <div className="pointer-events-none absolute right-[10%] top-[48%] h-2.5 w-2.5 rounded-full bg-[#5579a7] opacity-90" />
+        <div className="pointer-events-none absolute right-[clamp(2rem,10%,8rem)] top-[48%] h-2.5 w-2.5 rounded-full bg-[#5579a7] opacity-90 2xl:h-3 2xl:w-3" />
 
-        <div className="relative z-10 flex max-w-[355px] flex-col items-center text-center">
+        <div className="relative z-10 flex max-w-[355px] flex-col items-center text-center 2xl:max-w-[400px]">
           <EmptyStateGraphic />
           <h1 className="mt-3 text-[1.15rem] font-extrabold tracking-[-0.05em] text-[#302c29] sm:mt-4 sm:text-[1.05rem]">
             No assignments yet

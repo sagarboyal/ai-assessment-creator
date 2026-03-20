@@ -15,22 +15,24 @@ export function App() {
   const [view, setView] = useState<"empty" | "create">("empty");
 
   return (
-    <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5">
-      <div className="assignment-shell relative mx-auto flex h-full max-w-[1600px] overflow-hidden rounded-[18px] bg-[var(--shell-bg)] md:flex-row">
-        <div className="hidden py-2.5 md:flex">
+    <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5 2xl:px-6 2xl:py-4">
+      <div className="assignment-shell relative mx-auto flex h-full max-w-[1720px] overflow-hidden rounded-[18px] bg-[var(--shell-bg)] md:flex-row 2xl:gap-3 2xl:rounded-[26px]">
+        <div className="hidden py-2.5 md:flex xl:py-3">
           <Sidebar onCreateAssignment={() => setView("create")} />
         </div>
 
-        <section className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#e6e6e6]">
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#e6e6e6]">
           <TopBar
             onBack={view === "create" ? () => setView("empty") : undefined}
             title={view === "create" ? "Create Assignment" : "Assignment"}
           />
-          {view === "empty" ? (
-            <EmptyAssignmentsState onCreateAssignment={() => setView("create")} />
-          ) : (
-            <CreateAssignmentPage onBack={() => setView("empty")} />
-          )}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {view === "empty" ? (
+              <EmptyAssignmentsState onCreateAssignment={() => setView("create")} />
+            ) : (
+              <CreateAssignmentPage onBack={() => setView("empty")} />
+            )}
+          </div>
         </section>
 
         <button

@@ -19,10 +19,10 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
   );
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-[#e6e6e6] px-3 pb-4 pt-3 sm:px-8 sm:pb-6 sm:pt-5">
-      <div className="mx-auto flex max-w-[980px] flex-col">
-        <header className="mb-4 sm:mb-5">
-          <div>
+    <div className="bg-[#e6e6e6] px-3 pb-4 pt-2 sm:px-8 sm:pb-6 sm:pt-3 xl:px-5 xl:pt-4 2xl:px-8 2xl:pb-8">
+      <div className="mx-auto flex w-full max-w-[1120px] flex-col xl:max-w-[1240px]">
+        <section className="relative rounded-[26px] bg-[linear-gradient(180deg,#faf8f4_0%,#f7f6f3_100%)] px-4 py-5 shadow-[0_20px_50px_rgba(53,41,28,0.1)] sm:px-6 sm:py-7 md:-mt-2 md:rounded-[30px] md:border md:border-[#ece5dc] md:pt-8 md:shadow-[0_24px_60px_rgba(53,41,28,0.12)] xl:px-8 xl:py-8 xl:pt-9 2xl:px-10">
+          <header className="border-b border-[#e6e0d8] pb-5 sm:pb-6">
             <div className="flex items-center gap-2">
               <span className="h-3.5 w-3.5 rounded-full bg-[#93d094]" />
               <h1 className="text-[1.1rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.7rem]">
@@ -32,16 +32,14 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             <p className="mt-1 text-[12px] text-[#8d8882] sm:text-[14px]">
               Set up a new assignment for your students
             </p>
-          </div>
-        </header>
 
-        <div className="mb-5 grid grid-cols-[1fr_1fr] gap-2 sm:mb-6 sm:gap-3">
-          <div className="h-[4px] rounded-full bg-[#6a6764]" />
-          <div className="h-[4px] rounded-full bg-[#d9d6d1]" />
-        </div>
+            <div className="mt-4 grid grid-cols-[1fr_1fr] gap-2 sm:mt-5 sm:gap-3">
+              <div className="h-[4px] rounded-full bg-[#6a6764]" />
+              <div className="h-[4px] rounded-full bg-[#d9d6d1]" />
+            </div>
+          </header>
 
-        <section className="rounded-[26px] bg-[#f7f6f3] px-4 py-5 shadow-[0_20px_50px_rgba(53,41,28,0.1)] sm:px-6 sm:py-7">
-          <div>
+          <div className="pt-5 sm:pt-6">
             <h2 className="text-[1.05rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.55rem]">
               Assignment Details
             </h2>
@@ -80,7 +78,7 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
           </div>
 
           <div className="mt-5 sm:mt-6">
-            <div className="mb-3 grid grid-cols-[1fr_auto_auto] items-center gap-3 text-[12px] font-semibold text-[#3b3734] sm:mb-4 sm:text-[15px]">
+            <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 text-[12px] font-semibold text-[#3b3734] sm:mb-4 sm:text-[15px]">
               <span>Question Type</span>
               <span className="w-[72px] text-center sm:w-[88px]">
                 No. of Questions
@@ -149,7 +147,7 @@ type QuestionTypeRowProps = {
 
 function QuestionTypeRow({ count, label, marks }: QuestionTypeRowProps) {
   return (
-    <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3">
       <div className="flex items-center gap-3">
         <button className="flex h-11 min-w-0 flex-1 items-center justify-between rounded-full bg-white px-4 text-left text-[13px] text-[#3f3a37] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] sm:text-[14px]">
           <span className="truncate">{label}</span>
