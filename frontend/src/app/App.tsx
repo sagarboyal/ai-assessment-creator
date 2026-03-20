@@ -1,12 +1,19 @@
-import { EmptyAssignmentsState } from '../components/assignments/EmptyAssignmentsState'
-import { Sidebar } from '../components/layout/Sidebar'
-import { TopBar } from '../components/layout/TopBar'
+import { EmptyAssignmentsState } from "../components/assignments/EmptyAssignmentsState";
+import {
+  AssignmentIcon,
+  GridIcon,
+  GroupIcon,
+  PlusIcon,
+  SparkIcon,
+} from "../components/icons";
+import { Sidebar } from "../components/layout/Sidebar";
+import { TopBar } from "../components/layout/TopBar";
 
 export function App() {
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5">
-      <div className="assignment-shell mx-auto flex h-full max-w-[1600px] overflow-hidden rounded-[18px] bg-[var(--shell-bg)]">
-        <div className="flex py-2.5">
+      <div className="assignment-shell relative mx-auto flex h-full max-w-[1600px] overflow-hidden rounded-[18px] bg-[var(--shell-bg)] md:flex-row">
+        <div className="hidden py-2.5 md:flex">
           <Sidebar />
         </div>
 
@@ -14,7 +21,43 @@ export function App() {
           <TopBar />
           <EmptyAssignmentsState />
         </section>
+
+        <button className="absolute bottom-[80px] right-3.5 z-20 grid h-9 w-9 place-items-center rounded-full bg-white text-[#ef8e63] shadow-[0_12px_28px_rgba(0,0,0,0.16)] md:hidden">
+          <PlusIcon className="h-4 w-4" />
+        </button>
+
+        <nav className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-[16px] border border-[#5a5a5a] bg-[#1f1f1f] px-2 py-2 md:hidden md:rounded-[8px] md:px-3 md:py-3">
+          <div className="grid grid-cols-4">
+            <MobileNavItem icon={GridIcon} label="Home" />
+            <MobileNavItem icon={GroupIcon} label="My Groups" active />
+            <MobileNavItem icon={AssignmentIcon} label="Library" />
+            <MobileNavItem icon={SparkIcon} label="AI Toolkit" />
+          </div>
+        </nav>
       </div>
     </main>
-  )
+  );
+}
+
+type MobileNavItemProps = {
+  active?: boolean;
+  icon: typeof GridIcon;
+  label: string;
+};
+
+function MobileNavItem({
+  active = false,
+  icon: Icon,
+  label,
+}: MobileNavItemProps) {
+  return (
+    <button
+      className={`flex flex-col items-center gap-1 py-1 text-[10px] ${
+        active ? "text-white" : "text-[#7d7d7d]"
+      }`}
+    >
+      <Icon className={`h-4 w-4 ${active ? "text-white" : "text-[#6f6f6f]"}`} />
+      <span>{label}</span>
+    </button>
+  );
 }
