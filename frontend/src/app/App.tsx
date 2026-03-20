@@ -1,6 +1,9 @@
 import { useState } from "react";
+import {
+  AssignmentListPage,
+  type AssignmentCard,
+} from "../components/assignments/AssignmentListPage";
 import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
-import { EmptyAssignmentsState } from "../components/assignments/EmptyAssignmentsState";
 import {
   AssignmentIcon,
   GridIcon,
@@ -11,8 +14,17 @@ import {
 import { Sidebar } from "../components/layout/Sidebar";
 import { TopBar } from "../components/layout/TopBar";
 
+const assignments: AssignmentCard[] = [
+  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
+  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
+  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
+  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
+  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
+  { title: "Quiz on Electricity", assignedOn: "20-08-2025", dueOn: "21-08-2025" },
+];
+
 export function App() {
-  const [view, setView] = useState<"empty" | "create">("empty");
+  const [view, setView] = useState<"list" | "create">("list");
 
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5 2xl:px-6 2xl:py-4">
@@ -23,14 +35,21 @@ export function App() {
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#e6e6e6]">
           <TopBar
-            onBack={view === "create" ? () => setView("empty") : undefined}
-            title={view === "create" ? "Create Assignment" : "Assignment"}
+            onBack={view === "create" ? () => setView("list") : undefined}
+            title={view === "create" ? "Create Assignment" : "Assignments"}
           />
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {view === "empty" ? (
-              <EmptyAssignmentsState onCreateAssignment={() => setView("create")} />
+          <div
+            className={`min-h-0 flex-1 ${
+              view === "list" ? "overflow-hidden" : "overflow-y-auto"
+            }`}
+          >
+            {view === "list" ? (
+              <AssignmentListPage
+                assignments={assignments}
+                onCreateAssignment={() => setView("create")}
+              />
             ) : (
-              <CreateAssignmentPage onBack={() => setView("empty")} />
+              <CreateAssignmentPage onBack={() => setView("list")} />
             )}
           </div>
         </section>
