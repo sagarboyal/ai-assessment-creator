@@ -1,7 +1,11 @@
 import { navigationItems } from "../../data/navigation";
 import { GearIcon, SparkIcon } from "../icons";
 
-export function Sidebar() {
+type SidebarProps = {
+  onCreateAssignment?: () => void;
+};
+
+export function Sidebar({ onCreateAssignment }: SidebarProps) {
   return (
     <aside className="hidden w-60 flex-col self-stretch rounded-[20px] bg-white p-4 md:flex">
       <div className="flex items-center gap-3">
@@ -13,7 +17,10 @@ export function Sidebar() {
         </div>
       </div>
 
-      <button className="mt-9 inline-flex h-9 items-center justify-center gap-2 rounded-full border-2 border-[#de8f6b] bg-[linear-gradient(180deg,#35373b_0%,#1b1d20_100%)] px-4 text-[13px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_10px_20px_rgba(17,18,21,0.2)] transition hover:-translate-y-0.5">
+      <button
+        onClick={onCreateAssignment}
+        className="mt-9 inline-flex h-9 items-center justify-center gap-2 rounded-full border-2 border-[#de8f6b] bg-[linear-gradient(180deg,#35373b_0%,#1b1d20_100%)] px-4 text-[13px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_10px_20px_rgba(17,18,21,0.2)] transition hover:-translate-y-0.5"
+      >
         <SparkIcon className="h-3.5 w-3.5" />
         Create Assignment
       </button>

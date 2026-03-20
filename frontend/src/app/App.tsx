@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
 import { EmptyAssignmentsState } from "../components/assignments/EmptyAssignmentsState";
 import {
   AssignmentIcon,
@@ -10,23 +12,35 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { TopBar } from "../components/layout/TopBar";
 
 export function App() {
+  const [view, setView] = useState<"empty" | "create">("empty");
+
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5">
       <div className="assignment-shell relative mx-auto flex h-full max-w-[1600px] overflow-hidden rounded-[18px] bg-[var(--shell-bg)] md:flex-row">
         <div className="hidden py-2.5 md:flex">
-          <Sidebar />
+          <Sidebar onCreateAssignment={() => setView("create")} />
         </div>
 
         <section className="flex min-w-0 min-h-0 flex-1 flex-col bg-[#e6e6e6]">
-          <TopBar />
-          <EmptyAssignmentsState />
+          <TopBar
+            onBack={view === "create" ? () => setView("empty") : undefined}
+            title={view === "create" ? "Create Assignment" : "Assignment"}
+          />
+          {view === "empty" ? (
+            <EmptyAssignmentsState onCreateAssignment={() => setView("create")} />
+          ) : (
+            <CreateAssignmentPage onBack={() => setView("empty")} />
+          )}
         </section>
 
-        <button className="absolute bottom-[80px] right-3.5 z-20 grid h-9 w-9 place-items-center rounded-full bg-white text-[#ef8e63] shadow-[0_12px_28px_rgba(0,0,0,0.16)] md:hidden">
+        <button
+          onClick={() => setView("create")}
+          className="absolute bottom-[80px] right-3.5 z-20 grid h-9 w-9 place-items-center rounded-full bg-white text-[#ef8e63] shadow-[0_12px_28px_rgba(0,0,0,0.16)] md:hidden"
+        >
           <PlusIcon className="h-4 w-4" />
         </button>
 
-        <nav className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-[16px] border border-[#5a5a5a] bg-[#1f1f1f] px-2 py-2 md:hidden md:rounded-[8px] md:px-3 md:py-3">
+        <nav className="absolute inset-x-1.5 bottom-1.5 z-20 rounded-[16px] border border-[#5a5a5a] bg-[#1f1f1f] px-2 py-2 shadow-[0_18px_36px_rgba(0,0,0,0.28),0_6px_14px_rgba(0,0,0,0.18)] md:hidden md:rounded-[8px] md:px-3 md:py-3">
           <div className="grid grid-cols-4">
             <MobileNavItem icon={GridIcon} label="Home" />
             <MobileNavItem icon={GroupIcon} label="My Groups" active />

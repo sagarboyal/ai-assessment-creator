@@ -1,6 +1,12 @@
 import { PlusIcon, ScribbleIcon, SparkleOutlineIcon } from "../icons";
 
-export function EmptyAssignmentsState() {
+type EmptyAssignmentsStateProps = {
+  onCreateAssignment?: () => void;
+};
+
+export function EmptyAssignmentsState({
+  onCreateAssignment,
+}: EmptyAssignmentsStateProps) {
   return (
     <div className="assignment-canvas relative flex-1 min-h-0 overflow-hidden bg-[var(--shell-bg)] px-2.5 pb-24 pt-2 sm:px-3 sm:pb-3">
       <div className="relative flex h-full min-h-0 items-center justify-center overflow-hidden rounded-[20px] bg-[var(--shell-bg)] px-4 py-8 sm:px-6 sm:py-18">
@@ -27,7 +33,10 @@ export function EmptyAssignmentsState() {
             submissions. You can set up rubrics, define marking criteria, and
             let AI assist with grading.
           </p>
-          <button className="mt-7 inline-flex h-[42px] items-center justify-center gap-1.5 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-5 text-[13px] font-semibold text-white shadow-[0_10px_22px_rgba(20,23,31,0.16),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5 sm:mt-6 sm:h-[34px] sm:text-[12.5px]">
+          <button
+            onClick={onCreateAssignment}
+            className="mt-7 inline-flex h-[42px] items-center justify-center gap-1.5 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-5 text-[13px] font-semibold text-white shadow-[0_10px_22px_rgba(20,23,31,0.16),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5 sm:mt-6 sm:h-[34px] sm:text-[12.5px]"
+          >
             <PlusIcon className="h-3.5 w-3.5" />
             Create Your First Assignment
           </button>
