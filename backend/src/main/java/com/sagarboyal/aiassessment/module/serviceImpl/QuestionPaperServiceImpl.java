@@ -9,10 +9,12 @@ import com.sagarboyal.aiassessment.module.question.model.QuestionPaper;
 import com.sagarboyal.aiassessment.module.question.payload.QuestionPaperResponse;
 import com.sagarboyal.aiassessment.module.question.repository.QuestionPaperRepository;
 import com.sagarboyal.aiassessment.module.question.service.PromptBuilder;
+import com.sagarboyal.aiassessment.module.question.service.QuestionGenerationPublisher;
 import com.sagarboyal.aiassessment.module.question.service.QuestionPaperMapper;
 import com.sagarboyal.aiassessment.module.question.service.QuestionPaperParser;
 import com.sagarboyal.aiassessment.module.question.service.QuestionPaperService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,6 +26,41 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
     private final PromptBuilder promptBuilder;
     private final GroqClient groqClient;
     private final QuestionPaperParser parser;
+    private final QuestionGenerationPublisher questionGenerationPublisher;
+
+    @Override
+    public void validateGenerationRequest(String assessmentId) {
+        assessmentRepository.findById(assessmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assessment not found with id: " + assessmentId));
+    }
+
+    @Async
+    @Override
+    public void createQuestionPaperAsync(String assessmentId) {
+        questionGenerationPublisher.publish(
+                assessmentId,
+                AssessmentStatus.PROCESSING,
+                "Question paper generation started",
+                null
+        );
+
+        try {
+            QuestionPaperResponse response = createQuestionPaper(assessmentId);
+            questionGenerationPublisher.publish(
+                    assessmentId,
+                    AssessmentStatus.COMPLETED,
+                    "Question paper generated successfully",
+                    response
+            );
+        } catch (Exception e) {
+            questionGenerationPublisher.publish(
+                    assessmentId,
+                    AssessmentStatus.FAILED,
+                    e.getMessage(),
+                    null
+            );
+        }
+    }
 
     @Override
     public QuestionPaperResponse createQuestionPaper(String assessmentId) {

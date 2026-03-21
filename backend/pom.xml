@@ -69,6 +69,12 @@
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
+		<!-- WebSocket -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
+
 		<!-- Jackson DataBind -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
