@@ -1,8 +1,8 @@
-package com.sagarboyal.aiassessment.module.question.model;
+package com.sagarboyal.aiassessment.module.question.payload;
 
+import com.sagarboyal.aiassessment.module.question.model.Question;
+import com.sagarboyal.aiassessment.module.question.model.Section;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -12,10 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "question_papers")
-public class QuestionPaper {
-
-    @Id
+public class QuestionPaperResponse {
     private String id;
     private String assessmentId;
     private String schoolName;
@@ -26,6 +23,5 @@ public class QuestionPaper {
     private List<Section> sections;
     private List<Question> answerKey;
     private String generalInstruction;
-    @Builder.Default
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
 }
