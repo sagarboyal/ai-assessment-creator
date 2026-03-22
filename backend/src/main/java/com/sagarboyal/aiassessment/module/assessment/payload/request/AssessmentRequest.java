@@ -1,6 +1,7 @@
 package com.sagarboyal.aiassessment.module.assessment.payload.request;
 
 import com.sagarboyal.aiassessment.module.assessment.model.QuestionTypeConfig;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -37,6 +38,7 @@ public class AssessmentRequest {
     private LocalDateTime dueDate;
 
     @NotEmpty(message = "At least one question type is required")
+    @Valid
     private List<QuestionTypeConfig> questionTypes;
 
     private String additionalInstructions;
