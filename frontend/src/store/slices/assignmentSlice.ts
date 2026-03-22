@@ -4,6 +4,7 @@ import {
   createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
+import axios from "axios";
 import { api } from "../../lib/api";
 import type { RootState } from "../store";
 
@@ -151,6 +152,26 @@ const normalizePagedItems = (data: PagedResponse<Assessment> | Assessment[]) => 
 };
 
 const getErrorMessage = (error: unknown) => {
+  if (axios.isAxiosError(error)) {
+    const responseData = error.response?.data as
+      | { data?: Record<string, string>; message?: string }
+      | undefined;
+
+    if (responseData?.data && typeof responseData.data === "object") {
+      const fieldErrors = Object.values(responseData.data).filter(
+        (value): value is string => typeof value === "string" && value.length > 0,
+      );
+
+      if (fieldErrors.length > 0) {
+        return fieldErrors.join(", ");
+      }
+    }
+
+    if (typeof responseData?.message === "string" && responseData.message.length > 0) {
+      return responseData.message;
+    }
+  }
+
   if (
     typeof error === "object" &&
     error !== null &&

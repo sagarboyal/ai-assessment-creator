@@ -108,6 +108,7 @@ export function CreateAssignmentPage({
       ? mapAssignmentToQuestionTypeRows(assignment)
       : [createQuestionTypeRow(1)],
   );
+  const [localError, setLocalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const submitStatus = isEditMode ? updateStatus : createStatus;
 
@@ -159,9 +160,22 @@ export function CreateAssignmentPage({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     dispatch(clearAssignmentError());
+    setLocalError(null);
     setSuccessMessage(null);
 
     if (questionTypes.length === 0) {
+      return;
+    }
+
+    const dueDateValue = new Date(form.dueDate);
+
+    if (Number.isNaN(dueDateValue.getTime())) {
+      setLocalError("Please select a valid due date.");
+      return;
+    }
+
+    if (dueDateValue.getTime() <= Date.now() + 60_000) {
+      setLocalError("Due date must be at least 1 minute in the future.");
       return;
     }
 
@@ -308,6 +322,7 @@ export function CreateAssignmentPage({
             />
             <InputField
               label="Due Date"
+              min={getMinimumDueDateValue()}
               name="dueDate"
               onChange={handleInputChange}
               required
@@ -406,9 +421,9 @@ export function CreateAssignmentPage({
             </div>
           </div>
 
-          {assignmentError ? (
+          {localError || assignmentError ? (
             <p className="mt-5 rounded-2xl border border-[#e8beb1] bg-[#fff3ef] px-4 py-3 text-[13px] text-[#9a4c39]">
-              {assignmentError}
+              {localError ?? assignmentError}
             </p>
           ) : null}
 
@@ -671,6 +686,18 @@ function toDateTimeLocal(value: string) {
   const day = `${date.getDate()}`.padStart(2, "0");
   const hours = `${date.getHours()}`.padStart(2, "0");
   const minutes = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getMinimumDueDateValue() {
+  const minimumDate = new Date(Date.now() + 60_000);
+
+  const year = minimumDate.getFullYear();
+  const month = `${minimumDate.getMonth() + 1}`.padStart(2, "0");
+  const day = `${minimumDate.getDate()}`.padStart(2, "0");
+  const hours = `${minimumDate.getHours()}`.padStart(2, "0");
+  const minutes = `${minimumDate.getMinutes()}`.padStart(2, "0");
 
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
