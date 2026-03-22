@@ -8,6 +8,8 @@ import { api } from "../../lib/api";
 import type { RootState } from "../store";
 
 export type AssignmentView = "list" | "create";
+export type AssignmentDetailView = "detail";
+export type AssignmentScreenView = AssignmentView | AssignmentDetailView;
 
 export type QuestionTypeOption =
   | "MULTIPLE_CHOICE"
@@ -50,6 +52,37 @@ export type Assessment = {
   uploadedFileUrl: string | null;
 };
 
+export type QuestionPaperQuestion = {
+  answer: string;
+  difficulty: string;
+  marks: number;
+  options: string[] | null;
+  questionNumber: number;
+  questionText: string;
+  type: string;
+};
+
+export type QuestionPaperSection = {
+  instruction: string;
+  questionType: string;
+  questions: QuestionPaperQuestion[];
+  title: string;
+};
+
+export type QuestionPaper = {
+  answerKey: QuestionPaperQuestion[];
+  assessmentId: string;
+  className: string;
+  createdAt: string;
+  generalInstruction: string;
+  id: string;
+  schoolName: string;
+  sections: QuestionPaperSection[];
+  subject: string;
+  timeAllowed: number;
+  totalMarks: number;
+};
+
 type QuestionGenerationAcceptedResponse = {
   assessmentId: string;
   status: string;
@@ -81,7 +114,11 @@ type AssignmentState = {
   error: string | null;
   fetchStatus: "failed" | "idle" | "loading" | "succeeded";
   items: Assessment[];
-  view: AssignmentView;
+  questionPaperError: string | null;
+  questionPaperFetchStatus: "failed" | "idle" | "loading" | "succeeded";
+  questionPapersByAssignmentId: Record<string, QuestionPaper>;
+  selectedAssignmentId: string | null;
+  view: AssignmentScreenView;
 };
 
 const initialState: AssignmentState = {
@@ -90,6 +127,10 @@ const initialState: AssignmentState = {
   error: null,
   fetchStatus: "idle",
   items: [],
+  questionPaperError: null,
+  questionPaperFetchStatus: "idle",
+  questionPapersByAssignmentId: {},
+  selectedAssignmentId: null,
   view: "list",
 };
 
@@ -188,6 +229,25 @@ export const deleteAssessment = createAsyncThunk<
   }
 });
 
+export const fetchQuestionPaperByAssessmentId = createAsyncThunk<
+  QuestionPaper,
+  string,
+  { rejectValue: string }
+>(
+  "assignment/fetchQuestionPaperByAssessmentId",
+  async (assessmentId, { rejectWithValue }) => {
+    try {
+      const response = await api.get<ApiResponse<QuestionPaper>>(
+        `/questions/assessment/${assessmentId}`,
+      );
+
+      return response.data.data;
+    } catch (error) {
+      return rejectWithValue(getErrorMessage(error));
+    }
+  },
+);
+
 const assignmentSlice = createSlice({
   name: "assignment",
   initialState,
@@ -195,9 +255,21 @@ const assignmentSlice = createSlice({
     clearAssignmentError: (state) => {
       state.error = null;
     },
+    clearQuestionPaperError: (state) => {
+      state.questionPaperError = null;
+    },
+    openAssignmentDetail: (state, action: PayloadAction<string>) => {
+      state.selectedAssignmentId = action.payload;
+      state.questionPaperError = null;
+      state.view = "detail";
+    },
     updateAssignmentStatus: (
       state,
-      action: PayloadAction<{ id: string; status: string }>,
+      action: PayloadAction<{
+        id: string;
+        questionPaper?: QuestionPaper;
+        status: string;
+      }>,
     ) => {
       const item = state.items.find(
         (assessment) => assessment.id === action.payload.id,
@@ -206,9 +278,21 @@ const assignmentSlice = createSlice({
       if (item) {
         item.status = action.payload.status;
       }
+
+      if (action.payload.questionPaper) {
+        state.questionPapersByAssignmentId[action.payload.id] =
+          action.payload.questionPaper;
+        state.questionPaperFetchStatus = "succeeded";
+        state.questionPaperError = null;
+      }
     },
-    setView: (state, action: PayloadAction<AssignmentView>) => {
+    setView: (state, action: PayloadAction<AssignmentScreenView>) => {
       state.view = action.payload;
+
+      if (action.payload !== "detail") {
+        state.selectedAssignmentId = null;
+        state.questionPaperError = null;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -251,6 +335,20 @@ const assignmentSlice = createSlice({
         state.error =
           action.payload ?? "Failed to start question paper generation.";
       })
+      .addCase(fetchQuestionPaperByAssessmentId.pending, (state) => {
+        state.questionPaperFetchStatus = "loading";
+        state.questionPaperError = null;
+      })
+      .addCase(fetchQuestionPaperByAssessmentId.fulfilled, (state, action) => {
+        state.questionPaperFetchStatus = "succeeded";
+        state.questionPapersByAssignmentId[action.payload.assessmentId] =
+          action.payload;
+      })
+      .addCase(fetchQuestionPaperByAssessmentId.rejected, (state, action) => {
+        state.questionPaperFetchStatus = "failed";
+        state.questionPaperError =
+          action.payload ?? "Failed to load question paper.";
+      })
       .addCase(deleteAssessment.pending, (state) => {
         state.deleteStatus = "loading";
         state.error = null;
@@ -258,6 +356,12 @@ const assignmentSlice = createSlice({
       .addCase(deleteAssessment.fulfilled, (state, action) => {
         state.deleteStatus = "succeeded";
         state.items = state.items.filter((item) => item.id !== action.payload);
+        delete state.questionPapersByAssignmentId[action.payload];
+
+        if (state.selectedAssignmentId === action.payload) {
+          state.selectedAssignmentId = null;
+          state.view = "list";
+        }
       })
       .addCase(deleteAssessment.rejected, (state, action) => {
         state.deleteStatus = "failed";
@@ -266,8 +370,13 @@ const assignmentSlice = createSlice({
   },
 });
 
-export const { clearAssignmentError, setView, updateAssignmentStatus } =
-  assignmentSlice.actions;
+export const {
+  clearAssignmentError,
+  clearQuestionPaperError,
+  openAssignmentDetail,
+  setView,
+  updateAssignmentStatus,
+} = assignmentSlice.actions;
 
 export const assignmentReducer = assignmentSlice.reducer;
 
@@ -277,6 +386,24 @@ export const selectAssignmentView = (state: RootState) => state.assignment.view;
 export const selectCreateStatus = (state: RootState) => state.assignment.createStatus;
 export const selectDeleteStatus = (state: RootState) => state.assignment.deleteStatus;
 export const selectFetchStatus = (state: RootState) => state.assignment.fetchStatus;
+export const selectQuestionPaperError = (state: RootState) =>
+  state.assignment.questionPaperError;
+export const selectQuestionPaperFetchStatus = (state: RootState) =>
+  state.assignment.questionPaperFetchStatus;
+export const selectSelectedAssignmentId = (state: RootState) =>
+  state.assignment.selectedAssignmentId;
+export const selectQuestionPapersByAssignmentId = (state: RootState) =>
+  state.assignment.questionPapersByAssignmentId;
+export const selectSelectedAssignment = createSelector(
+  [selectAssignments, selectSelectedAssignmentId],
+  (items, selectedAssignmentId) =>
+    items.find((item) => item.id === selectedAssignmentId) ?? null,
+);
+export const selectSelectedQuestionPaper = createSelector(
+  [selectQuestionPapersByAssignmentId, selectSelectedAssignmentId],
+  (papers, selectedAssignmentId) =>
+    selectedAssignmentId ? papers[selectedAssignmentId] ?? null : null,
+);
 export const selectActiveGenerationAssignmentIds = createSelector(
   [selectAssignments],
   (items) =>

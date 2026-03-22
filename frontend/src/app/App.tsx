@@ -1,8 +1,7 @@
 import { useEffect } from "react";
-import {
-  AssignmentListPage,
-} from "../components/assignments/AssignmentListPage";
+import { AssignmentListPage } from "../components/assignments/AssignmentListPage";
 import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
+import { AssignmentDetailPage } from "../components/assignments/AssignmentDetailPage";
 import { useAssignmentStatusSocket } from "../hooks/useAssignmentStatusSocket";
 import {
   AssignmentIcon,
@@ -16,10 +15,16 @@ import { TopBar } from "../components/layout/TopBar";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   deleteAssessment,
+  fetchQuestionPaperByAssessmentId,
   fetchAssessments,
+  openAssignmentDetail,
   selectActiveGenerationAssignmentIds,
   selectAssignmentCards,
   selectAssignmentError,
+  selectQuestionPaperError,
+  selectQuestionPaperFetchStatus,
+  selectSelectedAssignment,
+  selectSelectedQuestionPaper,
   selectAssignmentView,
   selectFetchStatus,
   setView,
@@ -34,20 +39,43 @@ export function App() {
   );
   const errorMessage = useAppSelector(selectAssignmentError);
   const fetchStatus = useAppSelector(selectFetchStatus);
+  const questionPaperError = useAppSelector(selectQuestionPaperError);
+  const questionPaperFetchStatus = useAppSelector(selectQuestionPaperFetchStatus);
+  const selectedAssignment = useAppSelector(selectSelectedAssignment);
+  const selectedQuestionPaper = useAppSelector(selectSelectedQuestionPaper);
   const view = useAppSelector(selectAssignmentView);
 
   useEffect(() => {
     void dispatch(fetchAssessments());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (
+      view !== "detail" ||
+      !selectedAssignment ||
+      selectedQuestionPaper ||
+      selectedAssignment.status !== "COMPLETED"
+    ) {
+      return;
+    }
+
+    void dispatch(fetchQuestionPaperByAssessmentId(selectedAssignment.id));
+  }, [dispatch, selectedAssignment, selectedQuestionPaper, view]);
+
   useAssignmentStatusSocket({
     assignmentIds: activeGenerationAssignmentIds,
-    onStatusChange: ({ assessmentId, status }) => {
+    onStatusChange: ({ assessmentId, questionPaper, status }) => {
       if (!assessmentId || !status) {
         return;
       }
 
-      dispatch(updateAssignmentStatus({ id: assessmentId, status }));
+      dispatch(
+        updateAssignmentStatus({
+          id: assessmentId,
+          questionPaper,
+          status,
+        }),
+      );
     },
   });
 
@@ -61,9 +89,15 @@ export function App() {
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#e6e6e6]">
           <TopBar
             onBack={
-              view === "create" ? () => dispatch(setView("list")) : undefined
+              view !== "list" ? () => dispatch(setView("list")) : undefined
             }
-            title={view === "create" ? "Create Assignment" : "Assignments"}
+            title={
+              view === "create"
+                ? "Create Assignment"
+                : view === "detail"
+                  ? "Question Paper"
+                  : "Assignments"
+            }
           />
           <div
             className={`min-h-0 flex-1 ${
@@ -77,6 +111,15 @@ export function App() {
                 isLoading={fetchStatus === "loading"}
                 onCreateAssignment={() => dispatch(setView("create"))}
                 onDeleteAssignment={(id) => void dispatch(deleteAssessment(id))}
+                onViewAssignment={(id) => dispatch(openAssignmentDetail(id))}
+              />
+            ) : view === "detail" ? (
+              <AssignmentDetailPage
+                assignment={selectedAssignment}
+                errorMessage={questionPaperError}
+                isLoading={questionPaperFetchStatus === "loading"}
+                onBack={() => dispatch(setView("list"))}
+                questionPaper={selectedQuestionPaper}
               />
             ) : (
               <CreateAssignmentPage onBack={() => dispatch(setView("list"))} />

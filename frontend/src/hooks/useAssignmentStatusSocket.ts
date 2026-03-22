@@ -1,10 +1,11 @@
 import { useEffect, useRef } from "react";
 import { websocketUrl } from "../lib/api";
+import type { QuestionPaper } from "../store/slices/assignmentSlice";
 
 type GenerationEvent = {
   assessmentId: string;
   message?: string;
-  questionPaper?: unknown;
+  questionPaper?: QuestionPaper;
   status: string;
 };
 

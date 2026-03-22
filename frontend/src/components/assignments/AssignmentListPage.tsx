@@ -7,6 +7,7 @@ type AssignmentListPageProps = {
   isLoading?: boolean;
   onCreateAssignment?: () => void;
   onDeleteAssignment?: (id: string) => void;
+  onViewAssignment?: (id: string) => void;
 };
 
 export type AssignmentCard = {
@@ -23,6 +24,7 @@ export function AssignmentListPage({
   isLoading = false,
   onCreateAssignment,
   onDeleteAssignment,
+  onViewAssignment,
 }: AssignmentListPageProps) {
   const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
   const hasAssignments = assignments.length > 0;
@@ -105,6 +107,10 @@ export function AssignmentListPage({
                             setActiveMenuIndex(null);
                             onDeleteAssignment?.(assignment.id);
                           }}
+                          onView={() => {
+                            setActiveMenuIndex(null);
+                            onViewAssignment?.(assignment.id);
+                          }}
                           onOpenMenu={() =>
                             setActiveMenuIndex((current) =>
                               current === index ? null : index,
@@ -162,12 +168,14 @@ function AssignmentCardItem({
   onCloseMenu,
   onDelete,
   onOpenMenu,
+  onView,
 }: {
   assignment: AssignmentCard;
   isMenuOpen: boolean;
   onCloseMenu: () => void;
   onDelete: () => void;
   onOpenMenu: () => void;
+  onView: () => void;
 }) {
   return (
     <article className="rounded-[18px] bg-[#f8f7f4] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
@@ -197,7 +205,7 @@ function AssignmentCardItem({
               />
               <div className="absolute right-0 top-8 z-20 w-[136px] origin-top-right animate-[menu-pop_0.16s_ease-out] rounded-[14px] border border-[#eee7de] bg-white p-1.5 text-[11px] shadow-[0_16px_34px_rgba(55,45,34,0.14)]">
                 <button
-                  onClick={onCloseMenu}
+                  onClick={onView}
                   type="button"
                   className="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[#3d3731] transition hover:bg-[#f6f2ed]"
                 >
