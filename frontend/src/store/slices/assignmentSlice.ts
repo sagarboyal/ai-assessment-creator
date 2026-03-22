@@ -53,6 +53,11 @@ export type Assessment = {
   uploadedFileUrl: string | null;
 };
 
+export type AssessmentFilters = {
+  dueDate?: string;
+  title?: string;
+};
+
 export type UpdateAssessmentPayload = CreateAssessmentPayload & {
   id: string;
 };
@@ -200,12 +205,18 @@ const formatDate = (value: string) => {
 
 export const fetchAssessments = createAsyncThunk<
   Assessment[],
-  void,
+  AssessmentFilters | void,
   { rejectValue: string }
->("assignment/fetchAssessments", async (_, { rejectWithValue }) => {
+>("assignment/fetchAssessments", async (filters, { rejectWithValue }) => {
   try {
     const response = await api.get<ApiResponse<PagedResponse<Assessment> | Assessment[]>>(
       "/assessments",
+      {
+        params: {
+          ...(filters?.title ? { title: filters.title } : {}),
+          ...(filters?.dueDate ? { dueDate: filters.dueDate } : {}),
+        },
+      },
     );
 
     return normalizePagedItems(response.data.data);

@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AssignmentListPage } from "../components/assignments/AssignmentListPage";
 import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
 import { AssignmentDetailPage } from "../components/assignments/AssignmentDetailPage";
 import { useAssignmentStatusSocket } from "../hooks/useAssignmentStatusSocket";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import {
   AssignmentIcon,
   GridIcon,
@@ -36,6 +37,9 @@ import {
 
 export function App() {
   const dispatch = useAppDispatch();
+  const [dueDateFilter, setDueDateFilter] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+  const debouncedTitleFilter = useDebouncedValue(titleFilter.trim(), 350);
   const assignments = useAppSelector(selectAssignmentCards);
   const activeGenerationAssignmentIds = useAppSelector(
     selectActiveGenerationAssignmentIds,
@@ -50,8 +54,13 @@ export function App() {
   const view = useAppSelector(selectAssignmentView);
 
   useEffect(() => {
-    void dispatch(fetchAssessments());
-  }, [dispatch]);
+    void dispatch(
+      fetchAssessments({
+        ...(debouncedTitleFilter ? { title: debouncedTitleFilter } : {}),
+        ...(dueDateFilter ? { dueDate: dueDateFilter } : {}),
+      }),
+    );
+  }, [debouncedTitleFilter, dispatch, dueDateFilter]);
 
   useEffect(() => {
     if (
@@ -115,13 +124,17 @@ export function App() {
             {view === "list" ? (
               <AssignmentListPage
                 assignments={assignments}
+                dueDateFilter={dueDateFilter}
                 errorMessage={errorMessage}
                 isLoading={fetchStatus === "loading"}
                 onCreateAssignment={() => dispatch(setView("create"))}
                 onDeleteAssignment={(id) => void dispatch(deleteAssessment(id))}
+                onDueDateFilterChange={setDueDateFilter}
                 onEditAssignment={(id) => dispatch(openAssignmentEdit(id))}
                 onRetryAssignment={(id) => void dispatch(startQuestionGeneration(id))}
+                onTitleFilterChange={setTitleFilter}
                 onViewAssignment={(id) => dispatch(openAssignmentDetail(id))}
+                titleFilter={titleFilter}
               />
             ) : view === "detail" ? (
               <AssignmentDetailPage

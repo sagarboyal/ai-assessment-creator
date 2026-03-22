@@ -3,13 +3,17 @@ import { PlusIcon } from "../icons";
 
 type AssignmentListPageProps = {
   assignments?: AssignmentCard[];
+  dueDateFilter?: string;
   errorMessage?: string | null;
+  onDueDateFilterChange?: (value: string) => void;
   isLoading?: boolean;
   onCreateAssignment?: () => void;
   onDeleteAssignment?: (id: string) => void;
   onEditAssignment?: (id: string) => void;
   onRetryAssignment?: (id: string) => void;
+  onTitleFilterChange?: (value: string) => void;
   onViewAssignment?: (id: string) => void;
+  titleFilter?: string;
 };
 
 export type AssignmentCard = {
@@ -22,19 +26,25 @@ export type AssignmentCard = {
 
 export function AssignmentListPage({
   assignments = [],
+  dueDateFilter = "",
   errorMessage = null,
+  onDueDateFilterChange,
   isLoading = false,
   onCreateAssignment,
   onDeleteAssignment,
   onEditAssignment,
   onRetryAssignment,
+  onTitleFilterChange,
   onViewAssignment,
+  titleFilter = "",
 }: AssignmentListPageProps) {
   const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [pendingPreviewAssignmentId, setPendingPreviewAssignmentId] = useState<
     string | null
   >(null);
   const hasAssignments = assignments.length > 0;
+  const hasActiveFilters = titleFilter.trim().length > 0 || dueDateFilter.length > 0;
   const pendingPreviewAssignment = useMemo(
     () =>
       assignments.find((assignment) => assignment.id === pendingPreviewAssignmentId) ??
@@ -100,6 +110,7 @@ export function AssignmentListPage({
                   </div>
                   <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
                     <button
+                      onClick={() => setIsFilterPanelOpen((current) => !current)}
                       type="button"
                       className="inline-flex h-10 items-center gap-2 self-start rounded-full bg-[#f3f2ef] px-4 text-[12px] font-medium text-[#4b4744] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition hover:-translate-y-0.5"
                     >
@@ -112,11 +123,43 @@ export function AssignmentListPage({
                       <input
                         type="text"
                         placeholder="Search Assignment"
+                        value={titleFilter}
+                        onChange={(event) => onTitleFilterChange?.(event.target.value)}
                         className="w-full bg-transparent text-[12px] text-[#4c463f] outline-none placeholder:text-[#a39c94]"
                       />
                     </label>
                   </div>
                 </div>
+
+                {isFilterPanelOpen ? (
+                  <div className="mt-4 flex flex-col gap-3 rounded-[18px] border border-[#ece7df] bg-[#fbfaf7] px-4 py-4 sm:flex-row sm:items-end sm:justify-between">
+                    <label className="block sm:min-w-[220px]">
+                      <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8b837a]">
+                        Due Date
+                      </span>
+                      <input
+                        type="date"
+                        value={dueDateFilter}
+                        onChange={(event) =>
+                          onDueDateFilterChange?.(event.target.value)
+                        }
+                        className="h-11 w-full rounded-full border border-[#ddd8d2] bg-white px-4 text-[12px] text-[#3f3a37] outline-none"
+                      />
+                    </label>
+
+                    <button
+                      onClick={() => {
+                        onDueDateFilterChange?.("");
+                        onTitleFilterChange?.("");
+                        setIsFilterPanelOpen(false);
+                      }}
+                      type="button"
+                      className="inline-flex h-11 items-center justify-center rounded-full bg-[#f1eee8] px-4 text-[12px] font-semibold text-[#4a433d]"
+                    >
+                      Clear filters
+                    </button>
+                  </div>
+                ) : null}
 
                 <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
                   {errorMessage ? (
@@ -186,19 +229,32 @@ export function AssignmentListPage({
                     <AssignmentStackIcon />
                   </div>
                   <h2 className="mt-5 text-[1.05rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.3rem]">
-                    No assignments yet
+                    {hasActiveFilters ? "No matching assignments" : "No assignments yet"}
                   </h2>
                   <p className="mt-2 text-[12px] leading-[1.6] text-[#908a84] sm:text-[14px]">
-                    Create your first assignment to start sharing assessments with
-                    your classes.
+                    {hasActiveFilters
+                      ? "Try a different title or clear the date filter to see more assignments."
+                      : "Create your first assignment to start sharing assessments with your classes."}
                   </p>
-                  <button
-                    onClick={onCreateAssignment}
-                    className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-5 text-[12px] font-semibold text-white shadow-[0_10px_22px_rgba(20,23,31,0.16),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5"
-                  >
-                    <PlusIcon className="h-3.5 w-3.5" />
-                    Create Assignment
-                  </button>
+                  {hasActiveFilters ? (
+                    <button
+                      onClick={() => {
+                        onDueDateFilterChange?.("");
+                        onTitleFilterChange?.("");
+                      }}
+                      className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-[#f1eee8] px-5 text-[12px] font-semibold text-[#433d37] shadow-[0_10px_22px_rgba(20,23,31,0.08)] transition hover:-translate-y-0.5"
+                    >
+                      Clear Filters
+                    </button>
+                  ) : (
+                    <button
+                      onClick={onCreateAssignment}
+                      className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-5 text-[12px] font-semibold text-white shadow-[0_10px_22px_rgba(20,23,31,0.16),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5"
+                    >
+                      <PlusIcon className="h-3.5 w-3.5" />
+                      Create Assignment
+                    </button>
+                  )}
                 </div>
               </div>
             )}
