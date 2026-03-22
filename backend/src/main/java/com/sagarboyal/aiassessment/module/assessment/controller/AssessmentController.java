@@ -11,7 +11,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,9 +46,11 @@ public class AssessmentController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<AssessmentResponse>>> getAllAssessments(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size) {
-        PagedResponse<AssessmentResponse> response = assessmentService.getAllAssessments(page, size);
+        PagedResponse<AssessmentResponse> response = assessmentService.getAllAssessments(title, dueDate, page, size);
         return ResponseEntity.ok(ApiResponse.success("Assessments fetched successfully", response));
     }
 
