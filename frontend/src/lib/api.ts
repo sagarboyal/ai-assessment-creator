@@ -1,7 +1,16 @@
 import axios from "axios";
 
-export const apiBaseUrl =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080/api/v1";
+function getRequiredEnv(name: "VITE_API_BASE_URL") {
+  const value = import.meta.env[name];
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+
+  throw new Error(`${name} is not set. Add it to your frontend .env file.`);
+}
+
+export const apiBaseUrl = getRequiredEnv("VITE_API_BASE_URL");
 
 export const websocketUrl =
   import.meta.env.VITE_WS_URL ??
