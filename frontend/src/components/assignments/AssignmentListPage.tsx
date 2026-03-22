@@ -7,6 +7,7 @@ type AssignmentListPageProps = {
   isLoading?: boolean;
   onCreateAssignment?: () => void;
   onDeleteAssignment?: (id: string) => void;
+  onRetryAssignment?: (id: string) => void;
   onViewAssignment?: (id: string) => void;
 };
 
@@ -24,6 +25,7 @@ export function AssignmentListPage({
   isLoading = false,
   onCreateAssignment,
   onDeleteAssignment,
+  onRetryAssignment,
   onViewAssignment,
 }: AssignmentListPageProps) {
   const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
@@ -107,6 +109,7 @@ export function AssignmentListPage({
                             setActiveMenuIndex(null);
                             onDeleteAssignment?.(assignment.id);
                           }}
+                          onRetry={() => onRetryAssignment?.(assignment.id)}
                           onView={() => {
                             setActiveMenuIndex(null);
                             onViewAssignment?.(assignment.id);
@@ -168,6 +171,7 @@ function AssignmentCardItem({
   onCloseMenu,
   onDelete,
   onOpenMenu,
+  onRetry,
   onView,
 }: {
   assignment: AssignmentCard;
@@ -175,6 +179,7 @@ function AssignmentCardItem({
   onCloseMenu: () => void;
   onDelete: () => void;
   onOpenMenu: () => void;
+  onRetry: () => void;
   onView: () => void;
 }) {
   return (
@@ -236,6 +241,19 @@ function AssignmentCardItem({
           {assignment.dueOn}
         </p>
       </div>
+
+      {assignment.status.toUpperCase() === "FAILED" ? (
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={onRetry}
+            type="button"
+            className="inline-flex h-9 items-center gap-2 rounded-full bg-[#2f3136] px-4 text-[11px] font-semibold text-white shadow-[0_10px_18px_rgba(20,23,31,0.14)] transition hover:-translate-y-0.5"
+          >
+            <RetryIcon />
+            Retry Generation
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -336,6 +354,25 @@ function TrashIcon() {
       <path d="M9.5 3.8h5l.7 2.2H8.8l.7-2.2Z" />
       <path d="M7.5 7.5 8.2 19a2 2 0 0 0 2 1.9h3.6a2 2 0 0 0 2-1.9l.7-11.5" />
       <path d="M10 11v5M14 11v5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function RetryIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-4 w-4"
+    >
+      <path
+        d="M20 11a8 8 0 1 1-2.34-5.66"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M20 4v5h-5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

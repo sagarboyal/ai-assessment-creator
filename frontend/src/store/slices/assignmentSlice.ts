@@ -322,6 +322,17 @@ const assignmentSlice = createSlice({
         state.createStatus = "failed";
         state.error = action.payload ?? "Failed to create assignment.";
       })
+      .addCase(startQuestionGeneration.pending, (state, action) => {
+        state.error = null;
+
+        const item = state.items.find(
+          (assessment) => assessment.id === action.meta.arg,
+        );
+
+        if (item) {
+          item.status = "PROCESSING";
+        }
+      })
       .addCase(startQuestionGeneration.fulfilled, (state, action) => {
         const item = state.items.find(
           (assessment) => assessment.id === action.payload.assessmentId,
@@ -332,6 +343,14 @@ const assignmentSlice = createSlice({
         }
       })
       .addCase(startQuestionGeneration.rejected, (state, action) => {
+        const item = state.items.find(
+          (assessment) => assessment.id === action.meta.arg,
+        );
+
+        if (item) {
+          item.status = "FAILED";
+        }
+
         state.error =
           action.payload ?? "Failed to start question paper generation.";
       })

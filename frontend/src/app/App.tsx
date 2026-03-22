@@ -27,6 +27,7 @@ import {
   selectSelectedQuestionPaper,
   selectAssignmentView,
   selectFetchStatus,
+  startQuestionGeneration,
   setView,
   updateAssignmentStatus,
 } from "../store/slices/assignmentSlice";
@@ -111,6 +112,7 @@ export function App() {
                 isLoading={fetchStatus === "loading"}
                 onCreateAssignment={() => dispatch(setView("create"))}
                 onDeleteAssignment={(id) => void dispatch(deleteAssessment(id))}
+                onRetryAssignment={(id) => void dispatch(startQuestionGeneration(id))}
                 onViewAssignment={(id) => dispatch(openAssignmentDetail(id))}
               />
             ) : view === "detail" ? (
