@@ -3,6 +3,7 @@ package com.sagarboyal.aiassessment.module.assessment.serviceImpl;
 import com.sagarboyal.aiassessment.common.exception.custom.ResourceNotFoundException;
 import com.sagarboyal.aiassessment.common.utils.AppUtils;
 import com.sagarboyal.aiassessment.common.utils.StringUtils;
+import com.sagarboyal.aiassessment.config.RedisCacheConfig;
 import com.sagarboyal.aiassessment.module.assessment.payload.request.AssessmentStatusRequest;
 import com.sagarboyal.aiassessment.module.assessment.payload.request.AssessmentUpdateRequest;
 import com.sagarboyal.aiassessment.module.assessment.payload.response.PagedResponse;
@@ -13,6 +14,9 @@ import com.sagarboyal.aiassessment.module.assessment.repository.AssessmentReposi
 import com.sagarboyal.aiassessment.module.assessment.service.AssessmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -28,12 +32,14 @@ public class AssessmentServiceImpl implements AssessmentService {
     private final AppUtils  appUtils;
 
     @Override
+    @CachePut(cacheNames = RedisCacheConfig.ASSESSMENT_CACHE, key = "#result.id")
     public AssessmentResponse createAssessment(AssessmentRequest request) {
         Assessment assessment = mapper.toEntity(request);
         return mapper.toResponse(assessmentRepository.save(assessment));
     }
 
     @Override
+    @CachePut(cacheNames = RedisCacheConfig.ASSESSMENT_CACHE, key = "#result.id")
     public AssessmentResponse updateEntity(AssessmentUpdateRequest request) {
         Assessment existing = findById(request.getId());
         existing.setTitle(
@@ -84,6 +90,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
+    @CachePut(cacheNames = RedisCacheConfig.ASSESSMENT_CACHE, key = "#result.id")
     public AssessmentResponse updateStatus(AssessmentStatusRequest request) {
         Assessment assessment = findById(request.getAssessmentId());
         assessment.setStatus(request.getStatus());
@@ -91,6 +98,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisCacheConfig.ASSESSMENT_CACHE, key = "#id")
     public AssessmentResponse getAssessmentById(String id) {
         return mapper.toResponse(assessmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Assessment not found!")));
@@ -116,6 +124,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     }
 
     @Override
+    @CacheEvict(cacheNames = RedisCacheConfig.ASSESSMENT_CACHE, key = "#id")
     public void deleteAssessment(String id) {
         Assessment data = findById(id);
         assessmentRepository.delete(data);
