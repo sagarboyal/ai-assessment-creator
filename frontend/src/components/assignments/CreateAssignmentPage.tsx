@@ -6,6 +6,7 @@ import {
   createAssessment,
   selectAssignmentError,
   selectCreateStatus,
+  startQuestionGeneration,
 } from "../../store/slices/assignmentSlice";
 
 type CreateAssignmentPageProps = {
@@ -138,15 +139,16 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
         timeAllowed: Number(form.timeAllowed),
         dueDate: form.dueDate,
         questionTypes: questionTypes.map((row) => ({
-          marks: row.marks,
-          questionCount: row.questionCount,
+          marksPerQuestion: row.marks,
+          numberOfQuestions: row.questionCount,
           type: row.type,
         })),
         additionalInstructions: form.additionalInstructions.trim() || null,
         uploadedFileUrl: form.uploadedFileUrl.trim() || null,
       };
 
-      await dispatch(createAssessment(payload)).unwrap();
+      const createdAssessment = await dispatch(createAssessment(payload)).unwrap();
+      await dispatch(startQuestionGeneration(createdAssessment.id)).unwrap();
 
       setSuccessMessage("Assignment created successfully.");
       setForm(initialFormState);

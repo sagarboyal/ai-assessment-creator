@@ -3,6 +3,7 @@ import {
   AssignmentListPage,
 } from "../components/assignments/AssignmentListPage";
 import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
+import { useAssignmentStatusSocket } from "../hooks/useAssignmentStatusSocket";
 import {
   AssignmentIcon,
   GridIcon,
@@ -16,16 +17,21 @@ import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   deleteAssessment,
   fetchAssessments,
+  selectActiveGenerationAssignmentIds,
   selectAssignmentCards,
   selectAssignmentError,
   selectAssignmentView,
   selectFetchStatus,
   setView,
+  updateAssignmentStatus,
 } from "../store/slices/assignmentSlice";
 
 export function App() {
   const dispatch = useAppDispatch();
   const assignments = useAppSelector(selectAssignmentCards);
+  const activeGenerationAssignmentIds = useAppSelector(
+    selectActiveGenerationAssignmentIds,
+  );
   const errorMessage = useAppSelector(selectAssignmentError);
   const fetchStatus = useAppSelector(selectFetchStatus);
   const view = useAppSelector(selectAssignmentView);
@@ -33,6 +39,17 @@ export function App() {
   useEffect(() => {
     void dispatch(fetchAssessments());
   }, [dispatch]);
+
+  useAssignmentStatusSocket({
+    assignmentIds: activeGenerationAssignmentIds,
+    onStatusChange: ({ assessmentId, status }) => {
+      if (!assessmentId || !status) {
+        return;
+      }
+
+      dispatch(updateAssignmentStatus({ id: assessmentId, status }));
+    },
+  });
 
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5 2xl:px-6 2xl:py-4">

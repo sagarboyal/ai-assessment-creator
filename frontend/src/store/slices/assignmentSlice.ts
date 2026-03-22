@@ -18,8 +18,8 @@ export type QuestionTypeOption =
   | "DIAGRAM_GRAPH";
 
 export type QuestionTypeConfig = {
-  marks: number;
-  questionCount: number;
+  marksPerQuestion: number;
+  numberOfQuestions: number;
   type: QuestionTypeOption;
 };
 
@@ -50,6 +50,12 @@ export type Assessment = {
   uploadedFileUrl: string | null;
 };
 
+type QuestionGenerationAcceptedResponse = {
+  assessmentId: string;
+  status: string;
+  topic: string;
+};
+
 type ApiResponse<T> = {
   data: T;
   message: string;
@@ -65,6 +71,7 @@ type AssignmentCard = {
   assignedOn: string;
   dueOn: string;
   id: string;
+  status: string;
   title: string;
 };
 
@@ -151,6 +158,22 @@ export const createAssessment = createAsyncThunk<
   }
 });
 
+export const startQuestionGeneration = createAsyncThunk<
+  QuestionGenerationAcceptedResponse,
+  string,
+  { rejectValue: string }
+>("assignment/startQuestionGeneration", async (assessmentId, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiResponse<QuestionGenerationAcceptedResponse>>(
+      `/questions/${assessmentId}/generate`,
+    );
+
+    return response.data.data;
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
+
 export const deleteAssessment = createAsyncThunk<
   string,
   string,
@@ -171,6 +194,18 @@ const assignmentSlice = createSlice({
   reducers: {
     clearAssignmentError: (state) => {
       state.error = null;
+    },
+    updateAssignmentStatus: (
+      state,
+      action: PayloadAction<{ id: string; status: string }>,
+    ) => {
+      const item = state.items.find(
+        (assessment) => assessment.id === action.payload.id,
+      );
+
+      if (item) {
+        item.status = action.payload.status;
+      }
     },
     setView: (state, action: PayloadAction<AssignmentView>) => {
       state.view = action.payload;
@@ -203,6 +238,19 @@ const assignmentSlice = createSlice({
         state.createStatus = "failed";
         state.error = action.payload ?? "Failed to create assignment.";
       })
+      .addCase(startQuestionGeneration.fulfilled, (state, action) => {
+        const item = state.items.find(
+          (assessment) => assessment.id === action.payload.assessmentId,
+        );
+
+        if (item) {
+          item.status = action.payload.status;
+        }
+      })
+      .addCase(startQuestionGeneration.rejected, (state, action) => {
+        state.error =
+          action.payload ?? "Failed to start question paper generation.";
+      })
       .addCase(deleteAssessment.pending, (state) => {
         state.deleteStatus = "loading";
         state.error = null;
@@ -218,7 +266,8 @@ const assignmentSlice = createSlice({
   },
 });
 
-export const { clearAssignmentError, setView } = assignmentSlice.actions;
+export const { clearAssignmentError, setView, updateAssignmentStatus } =
+  assignmentSlice.actions;
 
 export const assignmentReducer = assignmentSlice.reducer;
 
@@ -228,12 +277,20 @@ export const selectAssignmentView = (state: RootState) => state.assignment.view;
 export const selectCreateStatus = (state: RootState) => state.assignment.createStatus;
 export const selectDeleteStatus = (state: RootState) => state.assignment.deleteStatus;
 export const selectFetchStatus = (state: RootState) => state.assignment.fetchStatus;
+export const selectActiveGenerationAssignmentIds = createSelector(
+  [selectAssignments],
+  (items) =>
+    items
+      .filter((item) => item.status === "PROCESSING")
+      .map((item) => item.id),
+);
 
 export const selectAssignmentCards = createSelector([selectAssignments], (items) =>
   items.map<AssignmentCard>((item) => ({
     assignedOn: formatDate(item.createdAt),
     dueOn: formatDate(item.dueDate),
     id: item.id,
+    status: item.status,
     title: item.title,
   })),
 );

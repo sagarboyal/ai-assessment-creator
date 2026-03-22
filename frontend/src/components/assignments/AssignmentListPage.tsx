@@ -13,6 +13,7 @@ export type AssignmentCard = {
   assignedOn: string;
   dueOn: string;
   id: string;
+  status: string;
   title: string;
 };
 
@@ -171,9 +172,12 @@ function AssignmentCardItem({
   return (
     <article className="rounded-[18px] bg-[#f8f7f4] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-[14px] font-extrabold tracking-[-0.045em] text-[#2f2b28] md:text-[15px]">
-          {assignment.title}
-        </h2>
+        <div className="min-w-0">
+          <h2 className="text-[14px] font-extrabold tracking-[-0.045em] text-[#2f2b28] md:text-[15px]">
+            {assignment.title}
+          </h2>
+          <StatusBadge status={assignment.status} />
+        </div>
         <div className="relative">
           <button
             onClick={onOpenMenu}
@@ -225,6 +229,32 @@ function AssignmentCardItem({
         </p>
       </div>
     </article>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status.toUpperCase();
+  const styles =
+    normalizedStatus === "COMPLETED"
+      ? "bg-[#eaf8ee] text-[#246a38]"
+      : normalizedStatus === "FAILED"
+        ? "bg-[#fff1ee] text-[#c35345]"
+        : normalizedStatus === "PROCESSING"
+          ? "bg-[#f6efe1] text-[#9c620d]"
+          : "bg-[#ece9e3] text-[#6d655c]";
+  const label =
+    normalizedStatus === "COMPLETED"
+      ? "Questions generated"
+      : normalizedStatus === "PROCESSING"
+        ? "Generating questions"
+        : normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase();
+
+  return (
+    <span
+      className={`mt-2 inline-flex rounded-full px-3 py-1 text-[10px] font-semibold tracking-[0.02em] ${styles}`}
+    >
+      {label}
+    </span>
   );
 }
 
