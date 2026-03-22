@@ -7,7 +7,7 @@ import {
 import { api } from "../../lib/api";
 import type { RootState } from "../store";
 
-export type AssignmentView = "list" | "create";
+export type AssignmentView = "list" | "create" | "edit";
 export type AssignmentDetailView = "detail";
 export type AssignmentScreenView = AssignmentView | AssignmentDetailView;
 
@@ -50,6 +50,10 @@ export type Assessment = {
   timeAllowed: number;
   title: string;
   uploadedFileUrl: string | null;
+};
+
+export type UpdateAssessmentPayload = CreateAssessmentPayload & {
+  id: string;
 };
 
 export type QuestionPaperQuestion = {
@@ -114,16 +118,19 @@ type AssignmentState = {
   error: string | null;
   fetchStatus: "failed" | "idle" | "loading" | "succeeded";
   items: Assessment[];
+  editingAssignmentId: string | null;
   questionPaperError: string | null;
   questionPaperFetchStatus: "failed" | "idle" | "loading" | "succeeded";
   questionPapersByAssignmentId: Record<string, QuestionPaper>;
   selectedAssignmentId: string | null;
+  updateStatus: "failed" | "idle" | "loading" | "succeeded";
   view: AssignmentScreenView;
 };
 
 const initialState: AssignmentState = {
   createStatus: "idle",
   deleteStatus: "idle",
+  editingAssignmentId: null,
   error: null,
   fetchStatus: "idle",
   items: [],
@@ -131,6 +138,7 @@ const initialState: AssignmentState = {
   questionPaperFetchStatus: "idle",
   questionPapersByAssignmentId: {},
   selectedAssignmentId: null,
+  updateStatus: "idle",
   view: "list",
 };
 
@@ -229,6 +237,20 @@ export const deleteAssessment = createAsyncThunk<
   }
 });
 
+export const updateAssessment = createAsyncThunk<
+  Assessment,
+  UpdateAssessmentPayload,
+  { rejectValue: string }
+>("assignment/updateAssessment", async (payload, { rejectWithValue }) => {
+  try {
+    const response = await api.put<ApiResponse<Assessment>>("/assessments", payload);
+
+    return response.data.data;
+  } catch (error) {
+    return rejectWithValue(getErrorMessage(error));
+  }
+});
+
 export const fetchQuestionPaperByAssessmentId = createAsyncThunk<
   QuestionPaper,
   string,
@@ -263,6 +285,11 @@ const assignmentSlice = createSlice({
       state.questionPaperError = null;
       state.view = "detail";
     },
+    openAssignmentEdit: (state, action: PayloadAction<string>) => {
+      state.editingAssignmentId = action.payload;
+      state.error = null;
+      state.view = "edit";
+    },
     updateAssignmentStatus: (
       state,
       action: PayloadAction<{
@@ -293,6 +320,10 @@ const assignmentSlice = createSlice({
         state.selectedAssignmentId = null;
         state.questionPaperError = null;
       }
+
+      if (action.payload !== "edit") {
+        state.editingAssignmentId = null;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -321,6 +352,23 @@ const assignmentSlice = createSlice({
       .addCase(createAssessment.rejected, (state, action) => {
         state.createStatus = "failed";
         state.error = action.payload ?? "Failed to create assignment.";
+      })
+      .addCase(updateAssessment.pending, (state) => {
+        state.updateStatus = "loading";
+        state.error = null;
+      })
+      .addCase(updateAssessment.fulfilled, (state, action) => {
+        state.updateStatus = "succeeded";
+        state.items = state.items.map((item) =>
+          item.id === action.payload.id ? action.payload : item,
+        );
+        delete state.questionPapersByAssignmentId[action.payload.id];
+        state.editingAssignmentId = null;
+        state.view = "list";
+      })
+      .addCase(updateAssessment.rejected, (state, action) => {
+        state.updateStatus = "failed";
+        state.error = action.payload ?? "Failed to update assignment.";
       })
       .addCase(startQuestionGeneration.pending, (state, action) => {
         state.error = null;
@@ -393,6 +441,7 @@ export const {
   clearAssignmentError,
   clearQuestionPaperError,
   openAssignmentDetail,
+  openAssignmentEdit,
   setView,
   updateAssignmentStatus,
 } = assignmentSlice.actions;
@@ -405,6 +454,9 @@ export const selectAssignmentView = (state: RootState) => state.assignment.view;
 export const selectCreateStatus = (state: RootState) => state.assignment.createStatus;
 export const selectDeleteStatus = (state: RootState) => state.assignment.deleteStatus;
 export const selectFetchStatus = (state: RootState) => state.assignment.fetchStatus;
+export const selectUpdateStatus = (state: RootState) => state.assignment.updateStatus;
+export const selectEditingAssignmentId = (state: RootState) =>
+  state.assignment.editingAssignmentId;
 export const selectQuestionPaperError = (state: RootState) =>
   state.assignment.questionPaperError;
 export const selectQuestionPaperFetchStatus = (state: RootState) =>
@@ -417,6 +469,11 @@ export const selectSelectedAssignment = createSelector(
   [selectAssignments, selectSelectedAssignmentId],
   (items, selectedAssignmentId) =>
     items.find((item) => item.id === selectedAssignmentId) ?? null,
+);
+export const selectEditingAssignment = createSelector(
+  [selectAssignments, selectEditingAssignmentId],
+  (items, editingAssignmentId) =>
+    items.find((item) => item.id === editingAssignmentId) ?? null,
 );
 export const selectSelectedQuestionPaper = createSelector(
   [selectQuestionPapersByAssignmentId, selectSelectedAssignmentId],

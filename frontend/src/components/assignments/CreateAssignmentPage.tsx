@@ -2,14 +2,19 @@ import { useState, type ChangeEvent, type FormEvent, type HTMLInputTypeAttribute
 import { ChevronDownIcon, PlusIcon } from "../icons";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
+  type Assessment,
   clearAssignmentError,
   createAssessment,
   selectAssignmentError,
   selectCreateStatus,
   startQuestionGeneration,
+  selectUpdateStatus,
+  updateAssessment,
 } from "../../store/slices/assignmentSlice";
 
 type CreateAssignmentPageProps = {
+  assignment?: Assessment | null;
+  mode?: "create" | "edit";
   onBack?: () => void;
 };
 
@@ -66,15 +71,45 @@ const createQuestionTypeRow = (id: number): QuestionTypeRow => ({
   type: "MULTIPLE_CHOICE",
 });
 
-export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
+const mapAssignmentToFormState = (assignment: Assessment): AssessmentFormState => ({
+  additionalInstructions: assignment.additionalInstructions ?? "",
+  className: assignment.className,
+  dueDate: toDateTimeLocal(assignment.dueDate),
+  schoolName: assignment.schoolName,
+  subject: assignment.subject,
+  timeAllowed: `${assignment.timeAllowed}`,
+  title: assignment.title,
+  uploadedFileUrl: assignment.uploadedFileUrl ?? "",
+});
+
+const mapAssignmentToQuestionTypeRows = (assignment: Assessment): QuestionTypeRow[] =>
+  assignment.questionTypes.map((questionType, index) => ({
+    id: Date.now() + index,
+    marks: questionType.marksPerQuestion,
+    questionCount: questionType.numberOfQuestions,
+    type: questionType.type,
+  }));
+
+export function CreateAssignmentPage({
+  assignment = null,
+  mode = "create",
+  onBack,
+}: CreateAssignmentPageProps) {
   const dispatch = useAppDispatch();
   const createStatus = useAppSelector(selectCreateStatus);
+  const updateStatus = useAppSelector(selectUpdateStatus);
   const assignmentError = useAppSelector(selectAssignmentError);
-  const [form, setForm] = useState<AssessmentFormState>(initialFormState);
-  const [questionTypes, setQuestionTypes] = useState<QuestionTypeRow[]>([
-    createQuestionTypeRow(1),
-  ]);
+  const isEditMode = mode === "edit";
+  const [form, setForm] = useState<AssessmentFormState>(() =>
+    assignment && isEditMode ? mapAssignmentToFormState(assignment) : initialFormState,
+  );
+  const [questionTypes, setQuestionTypes] = useState<QuestionTypeRow[]>(() =>
+    assignment && isEditMode
+      ? mapAssignmentToQuestionTypeRows(assignment)
+      : [createQuestionTypeRow(1)],
+  );
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const submitStatus = isEditMode ? updateStatus : createStatus;
 
   const totalQuestions = questionTypes.reduce(
     (sum, row) => sum + row.questionCount,
@@ -147,12 +182,26 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
         uploadedFileUrl: form.uploadedFileUrl.trim() || null,
       };
 
-      const createdAssessment = await dispatch(createAssessment(payload)).unwrap();
-      await dispatch(startQuestionGeneration(createdAssessment.id)).unwrap();
+      if (isEditMode && assignment) {
+        const updatedAssessment = await dispatch(
+          updateAssessment({
+            id: assignment.id,
+            ...payload,
+          }),
+        ).unwrap();
 
-      setSuccessMessage("Assignment created successfully.");
-      setForm(initialFormState);
-      setQuestionTypes([createQuestionTypeRow(1)]);
+        await dispatch(startQuestionGeneration(updatedAssessment.id)).unwrap();
+        setSuccessMessage("Assignment updated successfully.");
+      } else {
+        const createdAssessment = await dispatch(createAssessment(payload)).unwrap();
+        await dispatch(startQuestionGeneration(createdAssessment.id)).unwrap();
+        setSuccessMessage("Assignment created successfully.");
+      }
+
+      if (!isEditMode) {
+        setForm(initialFormState);
+        setQuestionTypes([createQuestionTypeRow(1)]);
+      }
     } catch {
       // Error state is handled in Redux and surfaced below.
     }
@@ -169,7 +218,7 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             <div className="flex items-center gap-2">
               <span className="h-3.5 w-3.5 rounded-full bg-[#93d094]" />
               <h1 className="text-[1.1rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.7rem]">
-                Create Assignment
+                {isEditMode ? "Edit Assignment" : "Create Assignment"}
               </h1>
             </div>
             <p className="mt-1 text-[12px] text-[#8d8882] sm:text-[14px]">
@@ -187,7 +236,9 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
               Assignment Details
             </h2>
             <p className="mt-1 text-[12px] text-[#908a84] sm:text-[14px]">
-              This form maps to your Spring Boot `AssessmentRequest`.
+              {isEditMode
+                ? "Update the assignment details and regenerate the question paper."
+                : "This form maps to your Spring Boot `AssessmentRequest`."}
             </p>
           </div>
 
@@ -342,11 +393,15 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </button>
 
             <button
-              disabled={createStatus === "loading"}
+              disabled={submitStatus === "loading"}
               type="submit"
               className="inline-flex h-11 items-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-7 text-[14px] font-medium text-white shadow-[0_12px_30px_rgba(21,22,24,0.18)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {createStatus === "loading" ? "Saving..." : "Create Assignment"}
+              {submitStatus === "loading"
+                ? "Saving..."
+                : isEditMode
+                  ? "Save Changes"
+                  : "Create Assignment"}
               <ForwardArrowIcon />
             </button>
           </div>
@@ -525,4 +580,20 @@ function ForwardArrowIcon() {
       <path d="m9.5 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }

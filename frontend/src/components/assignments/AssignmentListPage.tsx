@@ -7,6 +7,7 @@ type AssignmentListPageProps = {
   isLoading?: boolean;
   onCreateAssignment?: () => void;
   onDeleteAssignment?: (id: string) => void;
+  onEditAssignment?: (id: string) => void;
   onRetryAssignment?: (id: string) => void;
   onViewAssignment?: (id: string) => void;
 };
@@ -25,6 +26,7 @@ export function AssignmentListPage({
   isLoading = false,
   onCreateAssignment,
   onDeleteAssignment,
+  onEditAssignment,
   onRetryAssignment,
   onViewAssignment,
 }: AssignmentListPageProps) {
@@ -109,6 +111,10 @@ export function AssignmentListPage({
                             setActiveMenuIndex(null);
                             onDeleteAssignment?.(assignment.id);
                           }}
+                          onEdit={() => {
+                            setActiveMenuIndex(null);
+                            onEditAssignment?.(assignment.id);
+                          }}
                           onRetry={() => onRetryAssignment?.(assignment.id)}
                           onView={() => {
                             setActiveMenuIndex(null);
@@ -170,6 +176,7 @@ function AssignmentCardItem({
   isMenuOpen,
   onCloseMenu,
   onDelete,
+  onEdit,
   onOpenMenu,
   onRetry,
   onView,
@@ -178,6 +185,7 @@ function AssignmentCardItem({
   isMenuOpen: boolean;
   onCloseMenu: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   onOpenMenu: () => void;
   onRetry: () => void;
   onView: () => void;
@@ -216,6 +224,14 @@ function AssignmentCardItem({
                 >
                   <span>View Assignment</span>
                   <ArrowActionIcon />
+                </button>
+                <button
+                  onClick={onEdit}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[#3d3731] transition hover:bg-[#f6f2ed]"
+                >
+                  <span>Edit</span>
+                  <EditIcon />
                 </button>
                 <button
                   onClick={onDelete}
@@ -373,6 +389,25 @@ function RetryIcon() {
         strokeLinejoin="round"
       />
       <path d="M20 4v5h-5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-4 w-4"
+    >
+      <path
+        d="M4 20h4l9.5-9.5a2.1 2.1 0 0 0-4-4L4 16v4Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="m12.5 7.5 4 4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

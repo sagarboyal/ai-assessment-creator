@@ -18,8 +18,10 @@ import {
   fetchQuestionPaperByAssessmentId,
   fetchAssessments,
   openAssignmentDetail,
+  openAssignmentEdit,
   selectActiveGenerationAssignmentIds,
   selectAssignmentCards,
+  selectEditingAssignment,
   selectAssignmentError,
   selectQuestionPaperError,
   selectQuestionPaperFetchStatus,
@@ -39,6 +41,7 @@ export function App() {
     selectActiveGenerationAssignmentIds,
   );
   const errorMessage = useAppSelector(selectAssignmentError);
+  const editingAssignment = useAppSelector(selectEditingAssignment);
   const fetchStatus = useAppSelector(selectFetchStatus);
   const questionPaperError = useAppSelector(selectQuestionPaperError);
   const questionPaperFetchStatus = useAppSelector(selectQuestionPaperFetchStatus);
@@ -95,6 +98,8 @@ export function App() {
             title={
               view === "create"
                 ? "Create Assignment"
+                : view === "edit"
+                  ? "Edit Assignment"
                 : view === "detail"
                   ? "Question Paper"
                   : "Assignments"
@@ -112,6 +117,7 @@ export function App() {
                 isLoading={fetchStatus === "loading"}
                 onCreateAssignment={() => dispatch(setView("create"))}
                 onDeleteAssignment={(id) => void dispatch(deleteAssessment(id))}
+                onEditAssignment={(id) => dispatch(openAssignmentEdit(id))}
                 onRetryAssignment={(id) => void dispatch(startQuestionGeneration(id))}
                 onViewAssignment={(id) => dispatch(openAssignmentDetail(id))}
               />
@@ -124,7 +130,12 @@ export function App() {
                 questionPaper={selectedQuestionPaper}
               />
             ) : (
-              <CreateAssignmentPage onBack={() => dispatch(setView("list"))} />
+              <CreateAssignmentPage
+                key={view === "edit" ? `edit-${editingAssignment?.id ?? "unknown"}` : "create"}
+                assignment={view === "edit" ? editingAssignment : null}
+                mode={view === "edit" ? "edit" : "create"}
+                onBack={() => dispatch(setView("list"))}
+              />
             )}
           </div>
         </section>
