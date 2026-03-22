@@ -10,16 +10,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
 
-    @Value("${app.cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}")
+    @Value("${app.cors.allowed-methods}")
     private List<String> allowedMethods;
 
-    @Value("${app.cors.allowed-headers:*}")
+    @Value("${app.cors.allowed-headers}")
     private List<String> allowedHeaders;
 
-    @Value("${app.cors.allow-credentials:true}")
+    @Value("${app.cors.allow-credentials}")
     private boolean allowCredentials;
 
     @Override
