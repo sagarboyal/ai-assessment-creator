@@ -1,5 +1,4 @@
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { QuestionPaperPdfDocument } from "./QuestionPaperPdfDocument";
+import { useRef, useState } from "react";
 import type {
   Assessment,
   QuestionPaper,
@@ -14,6 +13,14 @@ type AssignmentDetailPageProps = {
   questionPaper: QuestionPaper | null;
 };
 
+type Html2PdfWorker = {
+  from: (element: HTMLElement) => Html2PdfWorker;
+  save: () => Promise<void>;
+  set: (options: Record<string, unknown>) => Html2PdfWorker;
+};
+
+type Html2PdfFactory = () => Html2PdfWorker;
+
 export function AssignmentDetailPage({
   assignment,
   errorMessage = null,
@@ -23,6 +30,52 @@ export function AssignmentDetailPage({
 }: AssignmentDetailPageProps) {
   const isCompleted = assignment?.status === "COMPLETED" && Boolean(questionPaper);
   const readyQuestionPaper = isCompleted ? questionPaper : null;
+  const printableRef = useRef<HTMLElement | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!questionPaper || !printableRef.current) {
+      return;
+    }
+
+    try {
+      setDownloadError(null);
+      setIsDownloading(true);
+
+      const html2pdf = (await import("html2pdf.js")).default as Html2PdfFactory;
+
+      await html2pdf()
+        .set({
+          filename: `${slugify(
+            assignment?.title ?? questionPaper.subject,
+          )}-question-paper.pdf`,
+          html2canvas: {
+            backgroundColor: "#ffffff",
+            scale: 2,
+            useCORS: true,
+          },
+          image: { quality: 0.98, type: "jpeg" },
+          jsPDF: {
+            format: "a4",
+            orientation: "portrait",
+            unit: "mm",
+          },
+          margin: [10, 10, 10, 10],
+          pagebreak: {
+            after: [".pdf-end-page"],
+            before: [".pdf-answer-page"],
+            mode: ["css", "legacy"],
+          },
+        })
+        .from(printableRef.current)
+        .save();
+    } catch {
+      setDownloadError("Unable to generate the PDF right now. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="bg-[#e8e8e8] px-0 pb-4 pt-2 sm:px-4 sm:pb-6 xl:px-6 2xl:px-8">
@@ -36,18 +89,14 @@ export function AssignmentDetailPage({
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {questionPaper ? (
-              <PDFDownloadLink
-                document={<QuestionPaperPdfDocument questionPaper={questionPaper} />}
-                fileName={`${slugify(assignment?.title ?? questionPaper.subject)}-question-paper.pdf`}
+              <button
+                onClick={() => void handleDownloadPdf()}
+                type="button"
                 className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[12px] font-semibold text-[#1f1f1f]"
               >
-                {({ loading }) => (
-                  <>
-                    <DownloadIcon />
-                    {loading ? "Preparing PDF..." : "Download as PDF"}
-                  </>
-                )}
-              </PDFDownloadLink>
+                <DownloadIcon />
+                {isDownloading ? "Preparing PDF..." : "Download as PDF"}
+              </button>
             ) : null}
 
             <button
@@ -63,6 +112,12 @@ export function AssignmentDetailPage({
         {errorMessage ? (
           <p className="mt-4 rounded-2xl border border-[#e8beb1] bg-[#fff3ef] px-4 py-3 text-[13px] text-[#9a4c39]">
             {errorMessage}
+          </p>
+        ) : null}
+
+        {downloadError ? (
+          <p className="mt-4 rounded-2xl border border-[#e8beb1] bg-[#fff3ef] px-4 py-3 text-[13px] text-[#9a4c39]">
+            {downloadError}
           </p>
         ) : null}
 
@@ -87,7 +142,10 @@ export function AssignmentDetailPage({
             }
           />
         ) : readyQuestionPaper ? (
-          <article className="mt-3 rounded-[22px] bg-white px-4 py-5 text-[#222] shadow-[0_18px_40px_rgba(0,0,0,0.08)] sm:px-6 sm:py-7 md:px-8">
+          <article
+            ref={printableRef}
+            className="mt-3 rounded-[22px] bg-white px-4 py-5 text-[#222] shadow-[0_18px_40px_rgba(0,0,0,0.08)] sm:px-6 sm:py-7 md:px-8"
+          >
             <header className="text-center">
               <h1 className="text-[1.75rem] font-extrabold tracking-[-0.04em] text-[#333] sm:text-[2.1rem]">
                 {readyQuestionPaper.schoolName}
@@ -143,11 +201,11 @@ export function AssignmentDetailPage({
               ))}
             </div>
 
-            <div className="mt-8 text-[12px] font-semibold text-[#2d2d2d]">
+            <div className="pdf-end-page mt-8 text-[12px] font-semibold text-[#2d2d2d]">
               End of Question Paper
             </div>
 
-            <section className="mt-10">
+            <section className="pdf-answer-page mt-10 [break-before:page]">
               <h2 className="text-[1.2rem] font-bold text-[#333]">Answer Key:</h2>
               <div className="mt-5 space-y-3">
                 {readyQuestionPaper.answerKey.map((question) => (
