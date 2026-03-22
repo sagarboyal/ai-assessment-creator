@@ -2,6 +2,7 @@ package com.sagarboyal.aiassessment.module.serviceImpl;
 
 import com.sagarboyal.aiassessment.common.exception.custom.ResourceNotFoundException;
 import com.sagarboyal.aiassessment.config.GroqClient;
+import com.sagarboyal.aiassessment.config.RedisCacheConfig;
 import com.sagarboyal.aiassessment.module.assessment.model.Assessment;
 import com.sagarboyal.aiassessment.module.assessment.model.AssessmentStatus;
 import com.sagarboyal.aiassessment.module.assessment.repository.AssessmentRepository;
@@ -14,6 +15,9 @@ import com.sagarboyal.aiassessment.module.question.service.QuestionPaperMapper;
 import com.sagarboyal.aiassessment.module.question.service.QuestionPaperParser;
 import com.sagarboyal.aiassessment.module.question.service.QuestionPaperService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +31,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
     private final GroqClient groqClient;
     private final QuestionPaperParser parser;
     private final QuestionGenerationPublisher questionGenerationPublisher;
+    private final CacheManager cacheManager;
 
     @Override
     public void validateGenerationRequest(String assessmentId) {
@@ -69,27 +74,37 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
 
         assessment.setStatus(AssessmentStatus.PROCESSING);
         assessmentRepository.save(assessment);
+        evictAssessmentCache(assessmentId);
 
         try {
             String prompt = promptBuilder.buildQuestionPaperPrompt(assessment);
             String rawResponse = groqClient.generate(prompt);
 
             QuestionPaper paper = parser.parse(rawResponse, assessmentId);
+            QuestionPaper existingPaper = questionPaperRepository.findByAssessmentId(assessmentId);
+            if (existingPaper != null) {
+                paper.setId(existingPaper.getId());
+            }
             QuestionPaper saved = questionPaperRepository.save(paper);
 
             assessment.setStatus(AssessmentStatus.COMPLETED);
             assessmentRepository.save(assessment);
+            evictAssessmentCache(assessmentId);
 
-            return mapper.toResponse(saved);
+            QuestionPaperResponse response = mapper.toResponse(saved);
+            cacheQuestionPaper(response);
+            return response;
 
         } catch (Exception e) {
             assessment.setStatus(AssessmentStatus.FAILED);
             assessmentRepository.save(assessment);
+            evictAssessmentCache(assessmentId);
             throw new RuntimeException("Question paper generation failed: " + e.getMessage());
         }
     }
 
     @Override
+    @Cacheable(cacheNames = RedisCacheConfig.QUESTION_PAPER_BY_ASSESSMENT_CACHE, key = "#assessmentId")
     public QuestionPaperResponse getByAssessmentId(String assessmentId) {
         QuestionPaper paper = questionPaperRepository.findByAssessmentId(assessmentId);
         if (paper == null)
@@ -98,6 +113,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
     }
 
     @Override
+    @Cacheable(cacheNames = RedisCacheConfig.QUESTION_PAPER_BY_ID_CACHE, key = "#id")
     public QuestionPaperResponse getById(String id) {
         QuestionPaper paper = questionPaperRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Question paper not found with id: " + id));
@@ -109,6 +125,7 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
         QuestionPaper paper = questionPaperRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Question paper not found with id: " + id));
         questionPaperRepository.delete(paper);
+        evictQuestionPaperCaches(paper.getId(), paper.getAssessmentId());
     }
 
     @Override
@@ -117,5 +134,37 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
         if (paper == null)
             throw new ResourceNotFoundException("Question paper not found for assessment id: " + assessmentId);
         questionPaperRepository.delete(paper);
+        evictQuestionPaperCaches(paper.getId(), assessmentId);
+    }
+
+    private void cacheQuestionPaper(QuestionPaperResponse response) {
+        Cache questionPaperByIdCache = cacheManager.getCache(RedisCacheConfig.QUESTION_PAPER_BY_ID_CACHE);
+        if (questionPaperByIdCache != null) {
+            questionPaperByIdCache.put(response.getId(), response);
+        }
+
+        Cache questionPaperByAssessmentCache = cacheManager.getCache(RedisCacheConfig.QUESTION_PAPER_BY_ASSESSMENT_CACHE);
+        if (questionPaperByAssessmentCache != null) {
+            questionPaperByAssessmentCache.put(response.getAssessmentId(), response);
+        }
+    }
+
+    private void evictQuestionPaperCaches(String id, String assessmentId) {
+        Cache questionPaperByIdCache = cacheManager.getCache(RedisCacheConfig.QUESTION_PAPER_BY_ID_CACHE);
+        if (questionPaperByIdCache != null) {
+            questionPaperByIdCache.evict(id);
+        }
+
+        Cache questionPaperByAssessmentCache = cacheManager.getCache(RedisCacheConfig.QUESTION_PAPER_BY_ASSESSMENT_CACHE);
+        if (questionPaperByAssessmentCache != null) {
+            questionPaperByAssessmentCache.evict(assessmentId);
+        }
+    }
+
+    private void evictAssessmentCache(String assessmentId) {
+        Cache assessmentCache = cacheManager.getCache(RedisCacheConfig.ASSESSMENT_CACHE);
+        if (assessmentCache != null) {
+            assessmentCache.evict(assessmentId);
+        }
     }
 }

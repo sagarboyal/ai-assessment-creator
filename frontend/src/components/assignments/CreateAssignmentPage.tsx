@@ -2,13 +2,19 @@ import { useState, type ChangeEvent, type FormEvent, type HTMLInputTypeAttribute
 import { ChevronDownIcon, PlusIcon } from "../icons";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
+  type Assessment,
   clearAssignmentError,
   createAssessment,
   selectAssignmentError,
   selectCreateStatus,
+  startQuestionGeneration,
+  selectUpdateStatus,
+  updateAssessment,
 } from "../../store/slices/assignmentSlice";
 
 type CreateAssignmentPageProps = {
+  assignment?: Assessment | null;
+  mode?: "create" | "edit";
   onBack?: () => void;
 };
 
@@ -65,15 +71,46 @@ const createQuestionTypeRow = (id: number): QuestionTypeRow => ({
   type: "MULTIPLE_CHOICE",
 });
 
-export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
+const mapAssignmentToFormState = (assignment: Assessment): AssessmentFormState => ({
+  additionalInstructions: assignment.additionalInstructions ?? "",
+  className: assignment.className,
+  dueDate: toDateTimeLocal(assignment.dueDate),
+  schoolName: assignment.schoolName,
+  subject: assignment.subject,
+  timeAllowed: `${assignment.timeAllowed}`,
+  title: assignment.title,
+  uploadedFileUrl: assignment.uploadedFileUrl ?? "",
+});
+
+const mapAssignmentToQuestionTypeRows = (assignment: Assessment): QuestionTypeRow[] =>
+  assignment.questionTypes.map((questionType, index) => ({
+    id: Date.now() + index,
+    marks: questionType.marksPerQuestion,
+    questionCount: questionType.numberOfQuestions,
+    type: questionType.type,
+  }));
+
+export function CreateAssignmentPage({
+  assignment = null,
+  mode = "create",
+  onBack,
+}: CreateAssignmentPageProps) {
   const dispatch = useAppDispatch();
   const createStatus = useAppSelector(selectCreateStatus);
+  const updateStatus = useAppSelector(selectUpdateStatus);
   const assignmentError = useAppSelector(selectAssignmentError);
-  const [form, setForm] = useState<AssessmentFormState>(initialFormState);
-  const [questionTypes, setQuestionTypes] = useState<QuestionTypeRow[]>([
-    createQuestionTypeRow(1),
-  ]);
+  const isEditMode = mode === "edit";
+  const [form, setForm] = useState<AssessmentFormState>(() =>
+    assignment && isEditMode ? mapAssignmentToFormState(assignment) : initialFormState,
+  );
+  const [questionTypes, setQuestionTypes] = useState<QuestionTypeRow[]>(() =>
+    assignment && isEditMode
+      ? mapAssignmentToQuestionTypeRows(assignment)
+      : [createQuestionTypeRow(1)],
+  );
+  const [localError, setLocalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const submitStatus = isEditMode ? updateStatus : createStatus;
 
   const totalQuestions = questionTypes.reduce(
     (sum, row) => sum + row.questionCount,
@@ -123,9 +160,22 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     dispatch(clearAssignmentError());
+    setLocalError(null);
     setSuccessMessage(null);
 
     if (questionTypes.length === 0) {
+      return;
+    }
+
+    const dueDateValue = new Date(form.dueDate);
+
+    if (Number.isNaN(dueDateValue.getTime())) {
+      setLocalError("Please select a valid due date.");
+      return;
+    }
+
+    if (dueDateValue.getTime() <= Date.now() + 60_000) {
+      setLocalError("Due date must be at least 1 minute in the future.");
       return;
     }
 
@@ -138,19 +188,34 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
         timeAllowed: Number(form.timeAllowed),
         dueDate: form.dueDate,
         questionTypes: questionTypes.map((row) => ({
-          marks: row.marks,
-          questionCount: row.questionCount,
+          marksPerQuestion: row.marks,
+          numberOfQuestions: row.questionCount,
           type: row.type,
         })),
         additionalInstructions: form.additionalInstructions.trim() || null,
         uploadedFileUrl: form.uploadedFileUrl.trim() || null,
       };
 
-      await dispatch(createAssessment(payload)).unwrap();
+      if (isEditMode && assignment) {
+        const updatedAssessment = await dispatch(
+          updateAssessment({
+            id: assignment.id,
+            ...payload,
+          }),
+        ).unwrap();
 
-      setSuccessMessage("Assignment created successfully.");
-      setForm(initialFormState);
-      setQuestionTypes([createQuestionTypeRow(1)]);
+        await dispatch(startQuestionGeneration(updatedAssessment.id)).unwrap();
+        setSuccessMessage("Assignment updated successfully.");
+      } else {
+        const createdAssessment = await dispatch(createAssessment(payload)).unwrap();
+        await dispatch(startQuestionGeneration(createdAssessment.id)).unwrap();
+        setSuccessMessage("Assignment created successfully.");
+      }
+
+      if (!isEditMode) {
+        setForm(initialFormState);
+        setQuestionTypes([createQuestionTypeRow(1)]);
+      }
     } catch {
       // Error state is handled in Redux and surfaced below.
     }
@@ -163,31 +228,59 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
           onSubmit={handleSubmit}
           className="relative rounded-[26px] bg-[linear-gradient(180deg,#faf8f4_0%,#f7f6f3_100%)] px-4 py-5 shadow-[0_20px_50px_rgba(53,41,28,0.1)] sm:px-6 sm:py-7 md:-mt-2 md:rounded-[30px] md:border md:border-[#ece5dc] md:pt-8 md:shadow-[0_24px_60px_rgba(53,41,28,0.12)] xl:px-8 xl:py-8 xl:pt-9 2xl:px-10"
         >
-          <header className="border-b border-[#e6e0d8] pb-5 sm:pb-6">
-            <div className="flex items-center gap-2">
-              <span className="h-3.5 w-3.5 rounded-full bg-[#93d094]" />
-              <h1 className="text-[1.1rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.7rem]">
-                Create Assignment
-              </h1>
-            </div>
-            <p className="mt-1 text-[12px] text-[#8d8882] sm:text-[14px]">
-              Fields marked with * are mandatory.
-            </p>
+          <header className="border-b border-[#e6e0d8] pb-6 sm:pb-7">
+            <div className="rounded-[24px] bg-[#262626] px-4 py-4 text-white shadow-[0_16px_34px_rgba(22,22,22,0.16)] sm:px-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/82">
+                    <span className="h-2 w-2 rounded-full bg-[#9ad29b]" />
+                    {isEditMode ? "Edit Flow" : "Create Flow"}
+                  </div>
+                  <h1 className="mt-3 text-[1.25rem] font-extrabold tracking-[-0.04em] text-white sm:text-[1.9rem]">
+                    {isEditMode ? "Refine Assignment" : "Create Assignment"}
+                  </h1>
+                  <p className="mt-2 max-w-[620px] text-[12px] leading-[1.7] text-white/70 sm:text-[14px]">
+                    {isEditMode
+                      ? "Update the assignment details below. Saving will regenerate the question paper using the revised structure."
+                      : "Set up the assignment details, question mix, and teacher instructions before the question paper is generated."}
+                  </p>
+                </div>
 
-            <div className="mt-4 grid grid-cols-[1fr_1fr] gap-2 sm:mt-5 sm:gap-3">
-              <div className="h-[4px] rounded-full bg-[#6a6764]" />
-              <div className="h-[4px] rounded-full bg-[#d9d6d1]" />
+                <div className="grid grid-cols-2 gap-2 sm:min-w-[260px]">
+                  <SummaryTile
+                    label="Question Count"
+                    value={`${totalQuestions}`}
+                  />
+                  <SummaryTile label="Total Marks" value={`${totalMarks}`} />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <InfoPill
+                title="Mode"
+                value={isEditMode ? "Editing existing assignment" : "Creating new assignment"}
+              />
+              <InfoPill title="Status" value="Fields marked with * are mandatory" />
+              <InfoPill
+                title="Generation"
+                value={
+                  isEditMode
+                    ? "Saving regenerates the paper"
+                    : "Paper starts generating after save"
+                }
+              />
             </div>
           </header>
 
-          <div className="pt-5 sm:pt-6">
-            <h2 className="text-[1.05rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.55rem]">
-              Assignment Details
-            </h2>
-            <p className="mt-1 text-[12px] text-[#908a84] sm:text-[14px]">
-              This form maps to your Spring Boot `AssessmentRequest`.
-            </p>
-          </div>
+          <SectionIntro
+            description={
+              isEditMode
+                ? "Keep the academic metadata in sync before triggering a fresh generation run."
+                : "Start with the core assignment metadata that shapes the generated paper."
+            }
+            title="Assignment Details"
+          />
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <InputField
@@ -229,6 +322,7 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             />
             <InputField
               label="Due Date"
+              min={getMinimumDueDateValue()}
               name="dueDate"
               onChange={handleInputChange}
               required
@@ -237,7 +331,7 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             />
           </div>
 
-          <div className="mt-5 sm:mt-6">
+          <div className="mt-6 rounded-[22px] border border-[#ebe4dc] bg-white/80 px-4 py-4 sm:px-5">
             <label className="mb-2 block text-[13px] font-semibold text-[#3b3734] sm:text-[15px]">
               Uploaded File URL
               <span className="ml-2 text-[11px] font-medium text-[#9b948c]">
@@ -254,7 +348,12 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             />
           </div>
 
-          <div className="mt-5 sm:mt-6">
+          <SectionIntro
+            description="Define the paper structure by question type, count, and marks per question."
+            title="Question Blueprint"
+          />
+
+          <div className="mt-4 rounded-[24px] border border-[#ebe4dc] bg-white/88 px-4 py-4 shadow-[0_12px_26px_rgba(49,41,31,0.04)] sm:px-5">
             <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-3 text-[12px] font-semibold text-[#3b3734] sm:mb-4 sm:text-[15px]">
               <span>Question Type *</span>
               <span className="w-[82px] text-center sm:w-[96px]">
@@ -288,14 +387,19 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </button>
           </div>
 
-          <div className="mt-6 text-right text-[13px] text-[#35312f] sm:mt-8 sm:text-[15px]">
-            <div>Total Questions : {totalQuestions}</div>
-            <div className="mt-1">Total Marks : {totalMarks}</div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <InfoPill title="Total Questions" value={`${totalQuestions}`} />
+            <InfoPill title="Total Marks" value={`${totalMarks}`} />
           </div>
 
-          <div className="mt-6 sm:mt-8">
+          <SectionIntro
+            description="Guide the AI with difficulty, style, chapter focus, or evaluation notes."
+            title="Teacher Instructions"
+          />
+
+          <div className="mt-4 sm:mt-5">
             <label className="mb-2 block text-[13px] font-semibold text-[#3b3734] sm:text-[15px]">
-                Additional Instructions
+              Additional Instructions
               <span className="ml-2 text-[11px] font-medium text-[#9b948c]">
                 Optional extra prompt
               </span>
@@ -317,9 +421,9 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </div>
           </div>
 
-          {assignmentError ? (
+          {localError || assignmentError ? (
             <p className="mt-5 rounded-2xl border border-[#e8beb1] bg-[#fff3ef] px-4 py-3 text-[13px] text-[#9a4c39]">
-              {assignmentError}
+              {localError ?? assignmentError}
             </p>
           ) : null}
 
@@ -329,7 +433,7 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </p>
           ) : null}
 
-          <div className="mt-5 flex items-center justify-between px-1 pb-2 sm:mt-6">
+          <div className="mt-6 flex items-center justify-between gap-3 rounded-[22px] border border-[#ebe4dc] bg-white/82 px-4 py-4 sm:px-5">
             <button
               onClick={onBack}
               type="button"
@@ -340,11 +444,15 @@ export function CreateAssignmentPage({ onBack }: CreateAssignmentPageProps) {
             </button>
 
             <button
-              disabled={createStatus === "loading"}
+              disabled={submitStatus === "loading"}
               type="submit"
               className="inline-flex h-11 items-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-7 text-[14px] font-medium text-white shadow-[0_12px_30px_rgba(21,22,24,0.18)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {createStatus === "loading" ? "Saving..." : "Create Assignment"}
+              {submitStatus === "loading"
+                ? "Saving..."
+                : isEditMode
+                  ? "Save Changes"
+                  : "Create Assignment"}
               <ForwardArrowIcon />
             </button>
           </div>
@@ -523,4 +631,73 @@ function ForwardArrowIcon() {
       <path d="m9.5 6 6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+function SectionIntro({
+  description,
+  title,
+}: {
+  description: string;
+  title: string;
+}) {
+  return (
+    <div className="pt-6 sm:pt-7">
+      <h2 className="text-[1.02rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.45rem]">
+        {title}
+      </h2>
+      <p className="mt-1 text-[12px] text-[#908a84] sm:text-[14px]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[18px] bg-white/8 px-3 py-3 text-white">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/62">
+        {label}
+      </div>
+      <div className="mt-2 text-[1.2rem] font-bold tracking-[-0.04em]">{value}</div>
+    </div>
+  );
+}
+
+function InfoPill({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-[18px] border border-[#ece4db] bg-white/82 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a9188]">
+        {title}
+      </div>
+      <div className="mt-1 text-[12px] font-medium text-[#3c3732]">{value}</div>
+    </div>
+  );
+}
+
+function toDateTimeLocal(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function getMinimumDueDateValue() {
+  const minimumDate = new Date(Date.now() + 60_000);
+
+  const year = minimumDate.getFullYear();
+  const month = `${minimumDate.getMonth() + 1}`.padStart(2, "0");
+  const day = `${minimumDate.getDate()}`.padStart(2, "0");
+  const hours = `${minimumDate.getHours()}`.padStart(2, "0");
+  const minutes = `${minimumDate.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }

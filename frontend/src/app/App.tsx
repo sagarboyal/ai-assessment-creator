@@ -1,8 +1,9 @@
-import { useEffect } from "react";
-import {
-  AssignmentListPage,
-} from "../components/assignments/AssignmentListPage";
+import { useEffect, useState } from "react";
+import { AssignmentListPage } from "../components/assignments/AssignmentListPage";
 import { CreateAssignmentPage } from "../components/assignments/CreateAssignmentPage";
+import { AssignmentDetailPage } from "../components/assignments/AssignmentDetailPage";
+import { useAssignmentStatusSocket } from "../hooks/useAssignmentStatusSocket";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import {
   AssignmentIcon,
   GridIcon,
@@ -15,24 +16,81 @@ import { TopBar } from "../components/layout/TopBar";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   deleteAssessment,
+  fetchQuestionPaperByAssessmentId,
   fetchAssessments,
+  openAssignmentDetail,
+  openAssignmentEdit,
+  selectActiveGenerationAssignmentIds,
   selectAssignmentCards,
+  selectEditingAssignment,
   selectAssignmentError,
+  selectQuestionPaperError,
+  selectQuestionPaperFetchStatus,
+  selectSelectedAssignment,
+  selectSelectedQuestionPaper,
   selectAssignmentView,
   selectFetchStatus,
+  startQuestionGeneration,
   setView,
+  updateAssignmentStatus,
 } from "../store/slices/assignmentSlice";
 
 export function App() {
   const dispatch = useAppDispatch();
+  const [dueDateFilter, setDueDateFilter] = useState("");
+  const [titleFilter, setTitleFilter] = useState("");
+  const debouncedTitleFilter = useDebouncedValue(titleFilter.trim(), 350);
   const assignments = useAppSelector(selectAssignmentCards);
+  const activeGenerationAssignmentIds = useAppSelector(
+    selectActiveGenerationAssignmentIds,
+  );
   const errorMessage = useAppSelector(selectAssignmentError);
+  const editingAssignment = useAppSelector(selectEditingAssignment);
   const fetchStatus = useAppSelector(selectFetchStatus);
+  const questionPaperError = useAppSelector(selectQuestionPaperError);
+  const questionPaperFetchStatus = useAppSelector(selectQuestionPaperFetchStatus);
+  const selectedAssignment = useAppSelector(selectSelectedAssignment);
+  const selectedQuestionPaper = useAppSelector(selectSelectedQuestionPaper);
   const view = useAppSelector(selectAssignmentView);
 
   useEffect(() => {
-    void dispatch(fetchAssessments());
-  }, [dispatch]);
+    void dispatch(
+      fetchAssessments({
+        ...(debouncedTitleFilter ? { title: debouncedTitleFilter } : {}),
+        ...(dueDateFilter ? { dueDate: dueDateFilter } : {}),
+      }),
+    );
+  }, [debouncedTitleFilter, dispatch, dueDateFilter]);
+
+  useEffect(() => {
+    if (
+      view !== "detail" ||
+      !selectedAssignment ||
+      selectedQuestionPaper ||
+      selectedAssignment.status !== "COMPLETED"
+    ) {
+      return;
+    }
+
+    void dispatch(fetchQuestionPaperByAssessmentId(selectedAssignment.id));
+  }, [dispatch, selectedAssignment, selectedQuestionPaper, view]);
+
+  useAssignmentStatusSocket({
+    assignmentIds: activeGenerationAssignmentIds,
+    onStatusChange: ({ assessmentId, questionPaper, status }) => {
+      if (!assessmentId || !status) {
+        return;
+      }
+
+      dispatch(
+        updateAssignmentStatus({
+          id: assessmentId,
+          questionPaper,
+          status,
+        }),
+      );
+    },
+  });
 
   return (
     <main className="h-screen overflow-hidden bg-[var(--shell-bg)] p-2 text-[var(--text-strong)] sm:p-2.5 2xl:px-6 2xl:py-4">
@@ -42,27 +100,57 @@ export function App() {
         </div>
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#e6e6e6]">
-          <TopBar
-            onBack={
-              view === "create" ? () => dispatch(setView("list")) : undefined
-            }
-            title={view === "create" ? "Create Assignment" : "Assignments"}
-          />
           <div
             className={`min-h-0 flex-1 ${
-              view === "list" ? "overflow-hidden" : "overflow-y-auto"
+              view === "list"
+                ? "flex flex-col overflow-hidden"
+                : "overflow-y-auto [scrollbar-gutter:stable]"
             }`}
           >
+            <TopBar
+              onBack={
+                view !== "list" ? () => dispatch(setView("list")) : undefined
+              }
+              title={
+                view === "create"
+                  ? "Create Assignment"
+                  : view === "edit"
+                    ? "Edit Assignment"
+                  : view === "detail"
+                    ? "Question Paper"
+                    : "Assignments"
+              }
+            />
             {view === "list" ? (
               <AssignmentListPage
                 assignments={assignments}
+                dueDateFilter={dueDateFilter}
                 errorMessage={errorMessage}
                 isLoading={fetchStatus === "loading"}
                 onCreateAssignment={() => dispatch(setView("create"))}
                 onDeleteAssignment={(id) => void dispatch(deleteAssessment(id))}
+                onDueDateFilterChange={setDueDateFilter}
+                onEditAssignment={(id) => dispatch(openAssignmentEdit(id))}
+                onRetryAssignment={(id) => void dispatch(startQuestionGeneration(id))}
+                onTitleFilterChange={setTitleFilter}
+                onViewAssignment={(id) => dispatch(openAssignmentDetail(id))}
+                titleFilter={titleFilter}
+              />
+            ) : view === "detail" ? (
+              <AssignmentDetailPage
+                assignment={selectedAssignment}
+                errorMessage={questionPaperError}
+                isLoading={questionPaperFetchStatus === "loading"}
+                onBack={() => dispatch(setView("list"))}
+                questionPaper={selectedQuestionPaper}
               />
             ) : (
-              <CreateAssignmentPage onBack={() => dispatch(setView("list"))} />
+              <CreateAssignmentPage
+                key={view === "edit" ? `edit-${editingAssignment?.id ?? "unknown"}` : "create"}
+                assignment={view === "edit" ? editingAssignment : null}
+                mode={view === "edit" ? "edit" : "create"}
+                onBack={() => dispatch(setView("list"))}
+              />
             )}
           </div>
         </section>

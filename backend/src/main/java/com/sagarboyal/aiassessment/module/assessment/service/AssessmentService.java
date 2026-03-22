@@ -6,11 +6,13 @@ import com.sagarboyal.aiassessment.module.assessment.payload.response.PagedRespo
 import com.sagarboyal.aiassessment.module.assessment.payload.request.AssessmentRequest;
 import com.sagarboyal.aiassessment.module.assessment.payload.response.AssessmentResponse;
 
+import java.time.LocalDate;
+
 public interface AssessmentService {
     AssessmentResponse createAssessment(AssessmentRequest request);
     AssessmentResponse updateEntity(AssessmentUpdateRequest request);
     AssessmentResponse updateStatus(AssessmentStatusRequest request);
     AssessmentResponse getAssessmentById(String id);
-    PagedResponse<AssessmentResponse> getAllAssessments(Integer page, Integer size);
+    PagedResponse<AssessmentResponse> getAllAssessments(String title, LocalDate dueDate, Integer page, Integer size);
     void deleteAssessment(String id);
 }

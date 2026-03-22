@@ -6,7 +6,16 @@ spring:
     name: assessment-service
   data:
     mongodb:
-      uri: mongodb://localhost:27017/assesment-db
+      uri: ${MONGODB_URI:mongodb://localhost:27017/assesment-db}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: ${REDIS_TIMEOUT:2s}
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m
+      cache-null-values: false
 
 ai:
   groq:

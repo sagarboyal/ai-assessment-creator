@@ -23,5 +23,15 @@ services:
     depends_on:
       - mongodb
 
+  redis:
+    image: redis:7-alpine
+    container_name: assessment-redis
+    restart: no
+    ports:
+      - "6379:6379"
+    volumes:
+      - assessment_redis_data:/data
+
 volumes:
   assessment_mongo_data:
+  assessment_redis_data:

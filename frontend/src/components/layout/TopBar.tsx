@@ -7,7 +7,7 @@ type TopBarProps = {
 
 export function TopBar({ onBack, title = "Assignment" }: TopBarProps) {
   return (
-    <header className="sticky top-0 z-50 bg-[#e6e6e6] px-2.5 pt-2.5 xl:px-5 xl:pt-4 2xl:px-8 2xl:pt-5">
+    <header className="sticky top-0 z-50 bg-[#e6e6e6] px-3 pt-2 sm:px-8 sm:pt-3 xl:px-5 xl:pt-4 2xl:px-8 2xl:pt-5">
       <div className="flex items-center rounded-[18px] bg-white px-3 py-3 shadow-[0_10px_24px_rgba(28,21,14,0.08)] md:hidden">
         {onBack ? (
           <>
@@ -45,7 +45,7 @@ export function TopBar({ onBack, title = "Assignment" }: TopBarProps) {
         </div>
       </div>
 
-      <div className="hidden mx-auto w-full max-w-[1120px] items-center gap-3 rounded-2xl bg-white px-5 py-3 shadow-[0_10px_24px_rgba(28,21,14,0.08)] md:flex xl:max-w-[1240px] xl:px-6 xl:py-3.5">
+      <div className="hidden mx-auto w-full max-w-[1240px] items-center gap-3 rounded-2xl bg-white px-5 py-3 shadow-[0_10px_24px_rgba(28,21,14,0.08)] md:flex xl:px-6 xl:py-3.5">
         <button
           onClick={onBack}
           className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-strong)] transition hover:-translate-y-0.5"
