@@ -224,14 +224,21 @@ export function AssignmentListPage({
               </>
             ) : (
               <div className="flex min-h-0 flex-1 items-center justify-center">
-                <div className="flex max-w-[360px] flex-col items-center text-center">
-                  <div className="grid h-18 w-18 place-items-center rounded-[24px] bg-[#f3f2ef] text-[#706960] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                    <AssignmentStackIcon />
+                <div className="w-full max-w-[420px] px-6 py-6 text-center sm:px-8">
+                  <div className="mx-auto flex h-[180px] w-full max-w-[260px] items-center justify-center">
+                    <NoAssignmentsIllustration />
                   </div>
-                  <h2 className="mt-5 text-[1.05rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.3rem]">
+
+                  <div className="mx-auto mt-6 max-w-[360px]">
+                    <span className="inline-flex rounded-full border border-[#e8e2d8] bg-[rgba(255,255,255,0.72)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8a8178]">
+                      Assignment library
+                    </span>
+                  </div>
+
+                  <h2 className="mt-4 text-[1.2rem] font-extrabold tracking-[-0.04em] text-[#35312f] sm:text-[1.5rem]">
                     {hasActiveFilters ? "No matching assignments" : "No assignments yet"}
                   </h2>
-                  <p className="mt-2 text-[12px] leading-[1.6] text-[#908a84] sm:text-[14px]">
+                  <p className="mx-auto mt-3 max-w-[360px] text-[12px] leading-[1.7] text-[#8c8379] sm:text-[14px]">
                     {hasActiveFilters
                       ? "Try a different title or clear the date filter to see more assignments."
                       : "Create your first assignment to start sharing assessments with your classes."}
@@ -242,14 +249,14 @@ export function AssignmentListPage({
                         onDueDateFilterChange?.("");
                         onTitleFilterChange?.("");
                       }}
-                      className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-[#f1eee8] px-5 text-[12px] font-semibold text-[#433d37] shadow-[0_10px_22px_rgba(20,23,31,0.08)] transition hover:-translate-y-0.5"
+                      className="mt-7 inline-flex h-11 items-center justify-center rounded-full border border-[#e6e0d6] bg-white px-5 text-[12px] font-semibold text-[#433d37] shadow-[0_8px_18px_rgba(20,23,31,0.06)] transition hover:-translate-y-0.5"
                     >
                       Clear Filters
                     </button>
                   ) : (
                     <button
                       onClick={onCreateAssignment}
-                      className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-5 text-[12px] font-semibold text-white shadow-[0_10px_22px_rgba(20,23,31,0.16),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5"
+                      className="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[linear-gradient(180deg,#2f3136_0%,#1a1b1d_100%)] px-5 text-[12px] font-semibold text-white shadow-[0_10px_22px_rgba(20,23,31,0.16),inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:-translate-y-0.5"
                     >
                       <PlusIcon className="h-3.5 w-3.5" />
                       Create Assignment
@@ -626,18 +633,72 @@ function FailedIcon() {
   );
 }
 
-function AssignmentStackIcon() {
+function NoAssignmentsIllustration() {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 240 180"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-7 w-7"
+      className="h-full w-full"
     >
-      <rect x="5" y="4" width="10" height="13" rx="2" />
-      <path d="M9 8h2.5M9 11h4.5M9 14h3.5" strokeLinecap="round" />
-      <path d="M15 7h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-1" />
+      <defs>
+        <radialGradient id="empty-assignments-glow" cx="0" cy="0" r="1" gradientTransform="translate(114 86) rotate(90) scale(84 88)" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FEFDFC" />
+          <stop offset="0.62" stopColor="#F4F1EB" />
+          <stop offset="1" stopColor="#EEE7DE" />
+        </radialGradient>
+        <linearGradient id="empty-assignments-card" x1="86" y1="22" x2="86" y2="123" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFFFFF" />
+          <stop offset="1" stopColor="#F7F3ED" />
+        </linearGradient>
+        <linearGradient id="empty-assignments-glass" x1="116" y1="65" x2="177" y2="126" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#D8D2C6" />
+          <stop offset="1" stopColor="#BDB4A4" />
+        </linearGradient>
+      </defs>
+
+      <circle cx="115" cy="89" r="80" fill="url(#empty-assignments-glow)" />
+
+      <path
+        d="M7 78C27 69 36 53 46 39C53 28 62 19 77 14"
+        stroke="#7C7368"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M30 47C22 38 18 30 22 24C26 18 36 18 43 23C52 29 51 40 42 47C31 56 17 56 7 54"
+        stroke="#7C7368"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      <rect x="69" y="25" width="66" height="94" rx="16" fill="url(#empty-assignments-card)" />
+      <rect x="69" y="25" width="66" height="94" rx="16" stroke="#E7E0D8" />
+      <rect x="77" y="38" width="34" height="8" rx="4" fill="#35312F" />
+      <rect x="77" y="57" width="48" height="7" rx="3.5" fill="#DDD7D0" />
+      <rect x="77" y="71" width="40" height="7" rx="3.5" fill="#DDD7D0" />
+      <rect x="77" y="85" width="28" height="7" rx="3.5" fill="#DDD7D0" />
+
+      <rect x="135" y="20" width="48" height="28" rx="8" fill="#FCFBF8" stroke="#E6E0D7" />
+      <circle cx="149" cy="34" r="5" fill="#93D094" />
+      <rect x="158" y="30.5" width="15" height="7" rx="3.5" fill="#D9D4CC" />
+
+      <circle cx="143" cy="96" r="38" fill="#FFFFFF" fillOpacity="0.38" />
+      <circle cx="143" cy="96" r="37" stroke="url(#empty-assignments-glass)" strokeWidth="6" />
+      <path d="M160 115L181 136" stroke="#CFC7BA" strokeWidth="8" strokeLinecap="round" />
+      <path d="M132 85L154 107" stroke="#E35B50" strokeWidth="8" strokeLinecap="round" />
+      <path d="M154 85L132 107" stroke="#E35B50" strokeWidth="8" strokeLinecap="round" />
+
+      <circle cx="177" cy="121" r="4" fill="#CFC7BA" />
+      <circle cx="177" cy="121" r="2" fill="#B9AF9E" />
+
+      <path
+        d="M48 132L50.6 139.4L58 142L50.6 144.6L48 152L45.4 144.6L38 142L45.4 139.4L48 132Z"
+        stroke="#8E8378"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <circle cx="188" cy="133" r="4" fill="#93D094" />
     </svg>
   );
 }
