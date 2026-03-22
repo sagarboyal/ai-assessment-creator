@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlusIcon } from "../icons";
 
 type AssignmentListPageProps = {
@@ -31,12 +31,47 @@ export function AssignmentListPage({
   onViewAssignment,
 }: AssignmentListPageProps) {
   const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
+  const [pendingPreviewAssignmentId, setPendingPreviewAssignmentId] = useState<
+    string | null
+  >(null);
   const hasAssignments = assignments.length > 0;
+  const pendingPreviewAssignment = useMemo(
+    () =>
+      assignments.find((assignment) => assignment.id === pendingPreviewAssignmentId) ??
+      null,
+    [assignments, pendingPreviewAssignmentId],
+  );
+
+  useEffect(() => {
+    if (!pendingPreviewAssignment) {
+      return;
+    }
+
+    if (pendingPreviewAssignment.status.toUpperCase() === "COMPLETED") {
+      const timeoutId = window.setTimeout(() => {
+        onViewAssignment?.(pendingPreviewAssignment.id);
+        setPendingPreviewAssignmentId(null);
+      }, 0);
+
+      return () => window.clearTimeout(timeoutId);
+    }
+  }, [onViewAssignment, pendingPreviewAssignment]);
+
+  const handleAttemptOpenAssignment = (assignment: AssignmentCard) => {
+    const status = assignment.status.toUpperCase();
+
+    if (status === "COMPLETED") {
+      onViewAssignment?.(assignment.id);
+      return;
+    }
+
+    setPendingPreviewAssignmentId(assignment.id);
+  };
 
   return (
     <div className="assignment-canvas relative flex h-full min-h-0 flex-1 overflow-hidden bg-[var(--shell-bg)] px-2.5 pb-2 pt-2 sm:px-3 sm:pb-3 xl:px-5 2xl:px-8 2xl:pb-5">
       <div className="mx-auto flex h-full min-h-0 w-full max-w-[1240px] flex-col">
-        <section className="flex h-full min-h-0 flex-1 flex-col rounded-[20px] bg-white px-4 pb-4 pt-4 shadow-[0_10px_24px_rgba(28,21,14,0.08)] sm:px-5 sm:pb-5 md:rounded-[24px] md:px-6 md:pt-5 xl:px-8 xl:pt-6">
+        <section className="relative flex h-full min-h-0 flex-1 flex-col rounded-[20px] bg-white px-4 pb-4 pt-4 shadow-[0_10px_24px_rgba(28,21,14,0.08)] sm:px-5 sm:pb-5 md:rounded-[24px] md:px-6 md:pt-5 xl:px-8 xl:pt-6">
           <div className="flex items-start justify-between gap-4 border-b border-[#ece7df] pb-5">
             <div>
               <div className="flex items-center gap-2">
@@ -118,8 +153,9 @@ export function AssignmentListPage({
                           onRetry={() => onRetryAssignment?.(assignment.id)}
                           onView={() => {
                             setActiveMenuIndex(null);
-                            onViewAssignment?.(assignment.id);
+                            handleAttemptOpenAssignment(assignment);
                           }}
+                          onPreview={() => handleAttemptOpenAssignment(assignment)}
                           onOpenMenu={() =>
                             setActiveMenuIndex((current) =>
                               current === index ? null : index,
@@ -129,6 +165,7 @@ export function AssignmentListPage({
                       ))}
                     </div>
                   )}
+
                 </div>
 
                 <div className="mt-4 flex justify-center pt-1">
@@ -140,6 +177,7 @@ export function AssignmentListPage({
                     Create Assignment
                   </button>
                 </div>
+
               </>
             ) : (
               <div className="flex min-h-0 flex-1 items-center justify-center">
@@ -165,6 +203,15 @@ export function AssignmentListPage({
               </div>
             )}
           </div>
+
+          {pendingPreviewAssignment ? (
+            <GenerationStatusModal
+              assignment={pendingPreviewAssignment}
+              onClose={() => setPendingPreviewAssignmentId(null)}
+              onRetry={() => onRetryAssignment?.(pendingPreviewAssignment.id)}
+            />
+          ) : null}
+
         </section>
       </div>
     </div>
@@ -178,6 +225,7 @@ function AssignmentCardItem({
   onDelete,
   onEdit,
   onOpenMenu,
+  onPreview,
   onRetry,
   onView,
 }: {
@@ -187,11 +235,15 @@ function AssignmentCardItem({
   onDelete: () => void;
   onEdit: () => void;
   onOpenMenu: () => void;
+  onPreview: () => void;
   onRetry: () => void;
   onView: () => void;
 }) {
   return (
-    <article className="rounded-[18px] bg-[#f8f7f4] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)]">
+    <article
+      onClick={onPreview}
+      className="cursor-pointer rounded-[18px] bg-[#f8f7f4] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92)] transition hover:-translate-y-0.5"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-[14px] font-extrabold tracking-[-0.045em] text-[#2f2b28] md:text-[15px]">
@@ -201,7 +253,10 @@ function AssignmentCardItem({
         </div>
         <div className="relative">
           <button
-            onClick={onOpenMenu}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenMenu();
+            }}
             type="button"
             className="grid h-7 w-7 place-items-center rounded-full text-[#8f877d] transition hover:-translate-y-0.5 hover:bg-white"
           >
@@ -213,12 +268,18 @@ function AssignmentCardItem({
               <button
                 aria-label="Close assignment menu"
                 className="fixed inset-0 z-10 cursor-default"
-                onClick={onCloseMenu}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCloseMenu();
+                }}
                 type="button"
               />
               <div className="absolute right-0 top-8 z-20 w-[136px] origin-top-right animate-[menu-pop_0.16s_ease-out] rounded-[14px] border border-[#eee7de] bg-white p-1.5 text-[11px] shadow-[0_16px_34px_rgba(55,45,34,0.14)]">
                 <button
-                  onClick={onView}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onView();
+                  }}
                   type="button"
                   className="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[#3d3731] transition hover:bg-[#f6f2ed]"
                 >
@@ -226,7 +287,10 @@ function AssignmentCardItem({
                   <ArrowActionIcon />
                 </button>
                 <button
-                  onClick={onEdit}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEdit();
+                  }}
                   type="button"
                   className="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[#3d3731] transition hover:bg-[#f6f2ed]"
                 >
@@ -234,7 +298,10 @@ function AssignmentCardItem({
                   <EditIcon />
                 </button>
                 <button
-                  onClick={onDelete}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onDelete();
+                  }}
                   type="button"
                   className="flex w-full items-center justify-between rounded-[10px] px-3 py-2 text-left text-[#d15a4e] transition hover:bg-[#fff1ee]"
                 >
@@ -261,7 +328,10 @@ function AssignmentCardItem({
       {assignment.status.toUpperCase() === "FAILED" ? (
         <div className="mt-4 flex justify-end">
           <button
-            onClick={onRetry}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRetry();
+            }}
             type="button"
             className="inline-flex h-9 items-center gap-2 rounded-full bg-[#2f3136] px-4 text-[11px] font-semibold text-white shadow-[0_10px_18px_rgba(20,23,31,0.14)] transition hover:-translate-y-0.5"
           >
@@ -271,6 +341,61 @@ function AssignmentCardItem({
         </div>
       ) : null}
     </article>
+  );
+}
+
+function GenerationStatusModal({
+  assignment,
+  onClose,
+  onRetry,
+}: {
+  assignment: AssignmentCard;
+  onClose: () => void;
+  onRetry: () => void;
+}) {
+  const normalizedStatus = assignment.status.toUpperCase();
+  const isFailed = normalizedStatus === "FAILED";
+
+  return (
+    <div className="absolute inset-0 z-30 overflow-hidden rounded-[24px]">
+      <div className="absolute inset-0 rounded-[24px] bg-[rgba(24,22,19,0.18)] backdrop-blur-[2px]" />
+      <div className="absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,248,238,0.16)_0%,rgba(255,248,238,0.05)_40%,rgba(255,248,238,0)_72%)]" />
+      <div className="relative flex h-full items-center justify-center px-4">
+        <div className="w-full max-w-[420px] rounded-[28px] border border-[#ebe4db] bg-[linear-gradient(180deg,#fffdfa_0%,#f7f4ef_100%)] px-6 py-6 text-center shadow-[0_28px_70px_rgba(17,17,17,0.24)]">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#f4f1eb] text-[#2d2d2d]">
+            {isFailed ? <FailedIcon /> : <LoadingIcon />}
+          </div>
+          <h3 className="mt-5 text-[1.15rem] font-extrabold tracking-[-0.04em] text-[#2d2a27]">
+            {isFailed ? "Generation failed" : "Generating PDF preview"}
+          </h3>
+          <p className="mt-2 text-[13px] leading-[1.7] text-[#7d756c]">
+            {isFailed
+              ? "The question paper is not ready yet because generation failed. Retry to continue."
+              : "The question paper is still being prepared. This preview will open automatically once generation completes."}
+          </p>
+
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <button
+              onClick={onClose}
+              type="button"
+              className="inline-flex h-10 items-center rounded-full bg-[#f4f1eb] px-5 text-[12px] font-semibold text-[#3d3833]"
+            >
+              Close
+            </button>
+            {isFailed ? (
+              <button
+                onClick={onRetry}
+                type="button"
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-[#2f3136] px-5 text-[12px] font-semibold text-white"
+              >
+                <RetryIcon />
+                Retry
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -408,6 +533,39 @@ function EditIcon() {
         strokeLinejoin="round"
       />
       <path d="m12.5 7.5 4 4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LoadingIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-7 w-7 animate-spin"
+    >
+      <path
+        d="M21 12a9 9 0 1 1-2.64-6.36"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function FailedIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-7 w-7"
+    >
+      <circle cx="12" cy="12" r="8" />
+      <path d="m9.5 9.5 5 5M14.5 9.5l-5 5" strokeLinecap="round" />
     </svg>
   );
 }
