@@ -75,6 +75,10 @@ public class QuestionPaperServiceImpl implements QuestionPaperService {
             String rawResponse = groqClient.generate(prompt);
 
             QuestionPaper paper = parser.parse(rawResponse, assessmentId);
+            QuestionPaper existingPaper = questionPaperRepository.findByAssessmentId(assessmentId);
+            if (existingPaper != null) {
+                paper.setId(existingPaper.getId());
+            }
             QuestionPaper saved = questionPaperRepository.save(paper);
 
             assessment.setStatus(AssessmentStatus.COMPLETED);
