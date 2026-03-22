@@ -91,25 +91,27 @@ export function App() {
         </div>
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#e6e6e6]">
-          <TopBar
-            onBack={
-              view !== "list" ? () => dispatch(setView("list")) : undefined
-            }
-            title={
-              view === "create"
-                ? "Create Assignment"
-                : view === "edit"
-                  ? "Edit Assignment"
-                : view === "detail"
-                  ? "Question Paper"
-                  : "Assignments"
-            }
-          />
           <div
             className={`min-h-0 flex-1 ${
-              view === "list" ? "overflow-hidden" : "overflow-y-auto"
+              view === "list"
+                ? "flex flex-col overflow-hidden"
+                : "overflow-y-auto [scrollbar-gutter:stable]"
             }`}
           >
+            <TopBar
+              onBack={
+                view !== "list" ? () => dispatch(setView("list")) : undefined
+              }
+              title={
+                view === "create"
+                  ? "Create Assignment"
+                  : view === "edit"
+                    ? "Edit Assignment"
+                  : view === "detail"
+                    ? "Question Paper"
+                    : "Assignments"
+              }
+            />
             {view === "list" ? (
               <AssignmentListPage
                 assignments={assignments}
