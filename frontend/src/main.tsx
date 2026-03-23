@@ -5,6 +5,8 @@ import { App } from "./app/App";
 import "./index.css";
 import { store } from "./store/store";
 
+document.title = "Ai Assesment Creator";
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
