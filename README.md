@@ -1,47 +1,69 @@
 # AI Assessment Creator
 
-AI Assessment Creator is a full-stack project for creating assessments and generating question papers with AI assistance.
+AI Assessment Creator is a full-stack application for creating academic assessments and generating AI-assisted question papers through a modern frontend and a Spring Boot backend.
 
-The repository currently contains:
+It is designed as a recruiter-friendly and developer-friendly monorepo with separate frontend and backend applications, live deployment, real-time status updates, and Redis-backed caching.
 
-- `backend`: Spring Boot API for assessment and question-paper management
-- `frontend`: React + TypeScript + Vite app for the UI
+## Live Deployment
 
-## Tech Stack
+- Frontend: https://ai-assessment-creator-two.vercel.app/
+- Backend API: https://ai-assessment-creator-g96o.onrender.com/api/v1
+- WebSocket endpoint: wss://ai-assessment-creator-g96o.onrender.com/ws
 
-- Frontend: React, TypeScript, Vite, Redux Toolkit, Axios, Tailwind CSS
-- Backend: Spring Boot, MongoDB, WebSocket support
-- AI integration: Groq API
+## Project Highlights
 
-## Project Structure
+- Create, edit, search, and manage assessments from a polished React interface
+- Generate question papers with AI using Groq
+- Receive live question-generation updates over WebSockets
+- Store core data in MongoDB
+- Cache assessments and question papers with Redis on Upstash
+- Deploy the frontend and backend separately for a production-style full-stack setup
+
+## Architecture
+
+### Frontend
+
+- React 19
+- TypeScript
+- Vite
+- Redux Toolkit
+- Axios
+- Tailwind CSS v4
+
+### Backend
+
+- Java 21
+- Spring Boot 4
+- Spring Web and WebSocket
+- Spring Data MongoDB
+- Spring Data Redis
+- Spring Cache
+- Groq API integration
+
+### Infrastructure
+
+- Frontend hosting: Vercel
+- Backend hosting: Render
+- Redis hosting: Upstash
+- Primary database: MongoDB
+
+## Repository Structure
 
 ```text
-.
+AI Assessment Creator/
 |-- backend/
 |-- frontend/
-|-- docker-compose.yml
-`-- README.md
+`-- docker-compose.yml
 ```
 
-## Prerequisites
+## Monorepo Docs
 
-- Node.js 20+ and npm
-- Java 21+
-- Maven
-- MongoDB running locally on `mongodb://localhost:27017/assesment-db`
-- A Groq API key
+- Frontend guide: `frontend/README.md`
+- Backend guide: `backend/README.md`
+- Backend environment template: `backend/.env.example`
+- Frontend environment template: `frontend/.env.example`
 
-## Environment Notes
-
-The backend reads the Groq API key from the `KEY` environment variable.
-
-Example PowerShell session:
-
-```powershell
-$env:KEY="your-groq-api-key"
-```
-
-## Local Development
+## Quick Start
 
 ### 1. Start the backend
 
@@ -49,8 +71,6 @@ $env:KEY="your-groq-api-key"
 cd backend
 mvn spring-boot:run
 ```
-
-The API runs on `http://localhost:8080`.
 
 ### 2. Start the frontend
 
@@ -60,34 +80,44 @@ npm install
 npm run dev
 ```
 
-The frontend runs on Vite's local dev server, typically `http://localhost:5173`.
+### 3. Open the app
 
-## Frontend Commands
+Frontend local URL:
 
-```powershell
-cd frontend
-npm run dev
-npm run build
-npm run lint
-npm run preview
+```text
+http://localhost:5173
 ```
 
-## Backend Notes
+Backend local URL:
 
-- Main application config: `backend/src/main/resources/application.yaml`
-- CORS is configured for local frontend origins
-- MongoDB is used as the primary datastore
+```text
+http://localhost:8080/api/v1
+```
 
-## Docker
+## Environment Setup
 
-A `docker-compose.yml` file exists in the project root and can be used as a starting point for local services if needed.
+- Frontend configuration lives in `frontend/.env`
+- Frontend example file: `frontend/.env.example`
+- Backend configuration lives in `backend/.env`
+- Backend example file: `backend/.env.example`
 
-## Development Workflow
+The backend currently uses environment-based configuration for:
 
-- Build features in a dedicated branch
-- Test backend and frontend changes locally
-- Merge completed work into `main` after validation
+- MongoDB connection
+- Redis / Upstash connection
+- cache TTL values
+- Groq API settings
+- CORS configuration
+- WebSocket configuration
 
-## Status
+## Free-Tier Hosting Note
 
-This repository includes both the assessment-management backend and the frontend UI for creating and listing assignments.
+This project is deployed on free-tier services. Because of that, the initial request can be slower after inactivity, especially when the Render backend needs to wake up. This is expected behavior for demo deployments.
+
+## Why This Project Stands Out
+
+- Full-stack architecture instead of a frontend-only demo
+- Real async workflow with WebSocket updates
+- Production-style cache layer with Redis
+- Clean monorepo structure with separated service documentation
+- Useful blend of UI work, backend logic, AI integration, and deployment

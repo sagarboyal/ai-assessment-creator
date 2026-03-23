@@ -38,28 +38,13 @@ This project uses free-tier hosting.
 - `@react-pdf/renderer`
 - `html2pdf.js`
 
-## Backend Architecture This Frontend Integrates With
-
-The current backend on `main` includes:
-
-- Spring Boot 4
-- MongoDB for primary persistence
-- Redis caching with Spring Cache
-- Upstash Redis deployment for cache storage
-- WebSocket messaging for generation status updates
-- Groq-powered question-paper generation using `llama-3.3-70b-versatile`
-
-The backend now caches:
-
-- assessments by ID
-- question papers by question-paper ID
-- question papers by assessment ID
-
-It also includes a cache fallback handler so cache failures do not block normal API behavior.
-
 ## Environment Variables
 
-Use the included `.env.example` as the starting point for local development.
+Create a local `.env` file from `.env.example` and use it as the starting point for local development.
+
+```powershell
+Copy-Item .env.example .env
+```
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080/api/v1
@@ -79,7 +64,6 @@ VITE_WS_URL=wss://ai-assessment-creator-g96o.onrender.com/ws
 
 - Node.js 20+
 - npm
-- Running backend service
 
 ### Install dependencies
 
@@ -104,24 +88,6 @@ npm run lint
 npm run preview
 ```
 
-## Backend Endpoints Used By The Frontend
-
-- `GET /assessments`
-- `POST /assessments`
-- `PUT /assessments`
-- `DELETE /assessments/{id}`
-- `POST /questions/{id}/generate`
-- `GET /questions/assessment/{assessmentId}`
-- WebSocket endpoint: `/ws`
-- WebSocket topic pattern: `/topic/questions/{assessmentId}`
-
-## Recommended Development Flow
-
-1. Start MongoDB and Redis if you are running the full stack locally.
-2. Start the backend from the repository `backend` folder.
-3. Configure `frontend/.env` with the correct API and WebSocket URLs.
-4. Run `npm run dev` inside `frontend`.
-
 ## Repository Context
 
 This frontend is part of the full-stack monorepo:
@@ -132,6 +98,8 @@ AI Assessment Creator/
 |-- frontend/
 `-- docker-compose.yml
 ```
+
+For backend setup and environment details, see `../backend/README.md`.
 
 ## Production Review Note
 
