@@ -3,6 +3,7 @@ package com.sagarboyal.aiassessment.module.assessment.payload.request;
 import com.sagarboyal.aiassessment.module.assessment.model.QuestionTypeConfig;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -31,6 +32,7 @@ public class AssessmentRequest {
     private String schoolName;
 
     @NotNull(message = "Time allowed is required")
+    @Min(value = 1, message = "Time allowed must be at least 1 minute")
     private Integer timeAllowed;
 
     @NotNull(message = "Due date is required")

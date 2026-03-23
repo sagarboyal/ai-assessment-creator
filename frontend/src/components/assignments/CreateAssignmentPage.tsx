@@ -164,7 +164,47 @@ export function CreateAssignmentPage({
     setSuccessMessage(null);
 
     if (questionTypes.length === 0) {
+      setLocalError("Add at least one question type.");
       return;
+    }
+
+    const trimmedTitle = form.title.trim();
+    const trimmedSubject = form.subject.trim();
+    const trimmedClassName = form.className.trim();
+    const trimmedSchoolName = form.schoolName.trim();
+    const trimmedUploadedFileUrl = form.uploadedFileUrl.trim();
+    const parsedTimeAllowed = Number(form.timeAllowed);
+
+    if (!trimmedTitle || !trimmedSubject || !trimmedClassName || !trimmedSchoolName) {
+      setLocalError("Please fill in all required fields.");
+      return;
+    }
+
+    if (!Number.isInteger(parsedTimeAllowed) || parsedTimeAllowed < 1) {
+      setLocalError("Time allowed must be a whole number greater than 0.");
+      return;
+    }
+
+    if (
+      questionTypes.some(
+        (row) =>
+          !Number.isInteger(row.questionCount) ||
+          row.questionCount < 1 ||
+          !Number.isInteger(row.marks) ||
+          row.marks < 1,
+      )
+    ) {
+      setLocalError("Question counts and marks must be whole numbers greater than 0.");
+      return;
+    }
+
+    if (trimmedUploadedFileUrl) {
+      try {
+        new URL(trimmedUploadedFileUrl);
+      } catch {
+        setLocalError("Please enter a valid uploaded file URL.");
+        return;
+      }
     }
 
     const dueDateValue = new Date(form.dueDate);
@@ -181,11 +221,11 @@ export function CreateAssignmentPage({
 
     try {
       const payload = {
-        title: form.title.trim(),
-        subject: form.subject.trim(),
-        className: form.className.trim(),
-        schoolName: form.schoolName.trim(),
-        timeAllowed: Number(form.timeAllowed),
+        title: trimmedTitle,
+        subject: trimmedSubject,
+        className: trimmedClassName,
+        schoolName: trimmedSchoolName,
+        timeAllowed: parsedTimeAllowed,
         dueDate: form.dueDate,
         questionTypes: questionTypes.map((row) => ({
           marksPerQuestion: row.marks,
@@ -193,7 +233,7 @@ export function CreateAssignmentPage({
           type: row.type,
         })),
         additionalInstructions: form.additionalInstructions.trim() || null,
-        uploadedFileUrl: form.uploadedFileUrl.trim() || null,
+        uploadedFileUrl: trimmedUploadedFileUrl || null,
       };
 
       if (isEditMode && assignment) {

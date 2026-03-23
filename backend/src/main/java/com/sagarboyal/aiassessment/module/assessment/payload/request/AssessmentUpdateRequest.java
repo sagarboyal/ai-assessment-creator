@@ -2,6 +2,7 @@ package com.sagarboyal.aiassessment.module.assessment.payload.request;
 
 import com.sagarboyal.aiassessment.module.assessment.model.QuestionTypeConfig;
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -26,6 +27,7 @@ public class AssessmentUpdateRequest {
 
     private String schoolName;
 
+    @Min(value = 1, message = "Time allowed must be at least 1 minute")
     private Integer timeAllowed;
 
     @Future(message = "Due date must be in the future")
