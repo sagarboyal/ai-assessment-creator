@@ -1,40 +1,46 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT}
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
-    name: assessment-service
+    name: ${SPRING_APPLICATION_NAME}
   data:
     mongodb:
-      uri: ${MONGODB_URI:mongodb://localhost:27017/assesment-db}
+      uri: ${MONGODB_URI}
+      database: ${DATABASE_NAME}
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: ${REDIS_TIMEOUT:2s}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      username: ${REDIS_USERNAME:}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+      timeout: ${REDIS_TIMEOUT}
   cache:
-    type: redis
+    type: ${CACHE_TYPE}
     redis:
-      time-to-live: 10m
-      cache-null-values: false
+      time-to-live: ${CACHE_REDIS_TTL}
+      cache-null-values: ${CACHE_REDIS_CACHE_NULL_VALUES}
 
 ai:
   groq:
-    api-key: ${KEY}
-    model: llama-3.3-70b-versatile
-    url: https://api.groq.com/openai/v1/chat/completions
+    api-key: ${GROQ_API_KEY}
+    model: ${GROQ_MODEL}
+    url: ${GROQ_URL}
 
 app:
   cors:
-    allowed-origins:
-      - http://localhost:3000
-      - http://localhost:5173
-    allowed-methods:
-      - GET
-      - POST
-      - PUT
-      - PATCH
-      - DELETE
-      - OPTIONS
-    allowed-headers:
-      - "*"
-    allow-credentials: true
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
+    allowed-methods: ${APP_CORS_ALLOWED_METHODS}
+    allowed-headers: ${APP_CORS_ALLOWED_HEADERS}
+    allow-credentials: ${APP_CORS_ALLOW_CREDENTIALS}
+  websocket:
+    endpoint: ${APP_WEBSOCKET_ENDPOINT}
+    broker-prefixes: ${APP_WEBSOCKET_BROKER_PREFIXES}
+    application-destination-prefixes: ${APP_WEBSOCKET_APPLICATION_DESTINATION_PREFIXES}
+  cache:
+    assessment-by-id-ttl: ${APP_CACHE_ASSESSMENT_BY_ID_TTL}
+    question-paper-by-id-ttl: ${APP_CACHE_QUESTION_PAPER_BY_ID_TTL}
+    question-paper-by-assessment-id-ttl: ${APP_CACHE_QUESTION_PAPER_BY_ASSESSMENT_ID_TTL}

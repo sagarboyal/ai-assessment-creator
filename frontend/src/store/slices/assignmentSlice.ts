@@ -313,8 +313,19 @@ const assignmentSlice = createSlice({
       state.questionPaperError = null;
     },
     openAssignmentDetail: (state, action: PayloadAction<string>) => {
+      const selectedAssignment = state.items.find(
+        (assessment) => assessment.id === action.payload,
+      );
+      const cachedQuestionPaper = state.questionPapersByAssignmentId[action.payload];
+
       state.selectedAssignmentId = action.payload;
       state.questionPaperError = null;
+      state.questionPaperFetchStatus =
+        selectedAssignment?.status === "COMPLETED" && !cachedQuestionPaper
+          ? "loading"
+          : cachedQuestionPaper
+            ? "succeeded"
+            : "idle";
       state.view = "detail";
     },
     openAssignmentEdit: (state, action: PayloadAction<string>) => {
@@ -351,6 +362,7 @@ const assignmentSlice = createSlice({
       if (action.payload !== "detail") {
         state.selectedAssignmentId = null;
         state.questionPaperError = null;
+        state.questionPaperFetchStatus = "idle";
       }
 
       if (action.payload !== "edit") {

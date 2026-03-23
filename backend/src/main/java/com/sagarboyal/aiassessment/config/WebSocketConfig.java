@@ -13,18 +13,27 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+    @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
+
+    @Value("${app.websocket.endpoint}")
+    private String endpoint;
+
+    @Value("${app.websocket.broker-prefixes}")
+    private List<String> brokerPrefixes;
+
+    @Value("${app.websocket.application-destination-prefixes}")
+    private List<String> applicationDestinationPrefixes;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic");
-        registry.setApplicationDestinationPrefixes("/app");
+        registry.enableSimpleBroker(brokerPrefixes.toArray(String[]::new));
+        registry.setApplicationDestinationPrefixes(applicationDestinationPrefixes.toArray(String[]::new));
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws")
+        registry.addEndpoint(endpoint)
                 .setAllowedOrigins(allowedOrigins.toArray(String[]::new));
     }
 }
